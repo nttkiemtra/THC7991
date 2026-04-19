@@ -6,7 +6,8 @@ import firebaseConfig from './firebase-applet-config.json';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Use a specific databaseId if provided, otherwise default to '(default)'
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 export const googleProvider = new GoogleAuthProvider();
 
 // Error Handling
@@ -65,11 +66,25 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 // Validation Test
 export async function testFirestoreConnection() {
   try {
+    console.log("Testing Firestore connection for project:", firebaseConfig.projectId);
+    // Attempting a server-side fetch to verify connectivity
     await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log("Firestore connection verified.");
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline.");
+    console.log("Firestore connection verified successfully.");
+  } catch (error: any) {
+    console.warn("Firestore Debug Info:", {
+      projectId: firebaseConfig.projectId,
+      databaseId: firebaseConfig.firestoreDatabaseId || '(default)',
+      errorMessage: error.message
+    });
+
+    if (error.message && error.message.includes('the client is offline')) {
+      console.error("LỖI: Trình duyệt không thể kết nối với Firestore.");
+      console.error("MẸO 1: Hãy kiểm tra xem bạn đã nhấn 'Create Database' trong Firebase Console (phần Firestore Database) chưa.");
+      console.error("MẸO 2: Đảm bảo bạn đã chọn đúng 'Cloud Firestore' chứ không phải 'Realtime Database'.");
+    } else if (error.code === 'permission-denied' || (error.message && error.message.includes('permission'))) {
+      console.info("Firestore: Đã kết nối nhưng bị từ chối quyền truy cập. Điều này là bình thường nếu Rules đang bật và bạn chưa đăng nhập.");
+    } else {
+      console.error("Lỗi Firestore khác:", error.message);
     }
   }
 }
