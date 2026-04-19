@@ -1,7 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_INSTRUCTION, MODEL_NAME } from '../constants';
-import { InputData, Chapter, Lesson, QuestionConfig } from '../types';
+import { InputData, Chapter, Lesson, QuestionConfig, QuestionBankItem } from '../types';
+import { INFORMATICS_SPECS_REFERENCE } from './informaticsSpecs';
 
 let ai: GoogleGenAI | null = null;
 
@@ -57,10 +58,10 @@ export const convertMatrixFileToHtml = async (file: File): Promise<string> => {
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash', 
+      model: MODEL_NAME, 
       contents: {
         parts: [
-          { inlineData: { mimeType: file.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg', data: base64Data } }, 
+          { inlineData: { mimeType: file.type || 'application/pdf', data: base64Data } }, 
           { text: prompt }
         ]
       },
@@ -77,11 +78,20 @@ export const convertMatrixFileToHtml = async (file: File): Promise<string> => {
   }
 };
 
-export const extractInfoFromDocument = async (file: File): Promise<Partial<InputData>> => {
-  const base64Data = await fileToBase64(file);
+export const extractInfoFromDocuments = async (files: File[]): Promise<Partial<InputData>> => {
+  const fileData = await Promise.all(files.map(async f => ({
+    base64: await fileToBase64(f),
+    type: f.type,
+    name: f.name
+  })));
   
   const prompt = `
-    Bạn là chuyên gia phân tích chương trình giáo dục. Hãy đọc file đính kèm (Kế hoạch dạy học/PPCT) và trích xuất dữ liệu cấu trúc cực kỳ chi tiết.
+    Bạn là chuyên gia phân tích chương trình giáo dục và biên soạn tài liệu. Hãy đọc các file đính kèm và thực hiện nhiệm vụ sau:
+
+    NHIỆM VỤ: TRÍCH XUẤT CẤU TRÚC (MỤC LỤC)
+    - Tìm kiếm thông tin về môn học, khối lớp và danh sách các chương/bài học.
+    - Nếu không có file mục lục rõ ràng, hãy tự suy luận từ nội dung tài liệu.
+    - Với mỗi bài học, hãy trích xuất hoặc tự soạn thảo "objectives" (Yêu cầu cần đạt) chi tiết cho 3 mức độ: Biết, Hiểu, Vận dụng. KHÔNG ĐƯỢC để trống.
 
     Yêu cầu đầu ra: JSON Object (không markdown) với cấu trúc sau:
     {
@@ -90,19 +100,17 @@ export const extractInfoFromDocument = async (file: File): Promise<Partial<Input
       "chapters": [
         {
           "id": "c1",
-          "name": "Tên chương đầy đủ",
+          "name": "Tên chương",
           "totalPeriods": 10,
           "lessons": [
             {
               "id": "c1_l1",
               "name": "Tên bài học",
               "periods": 2,
-              "weekStart": 1,
-              "weekEnd": 1,
               "objectives": {
-                "biet": "Nội dung yêu cầu cần đạt mức Biết...",
-                "hieu": "Nội dung yêu cầu cần đạt mức Hiểu...",
-                "van_dung": "Nội dung yêu cầu cần đạt mức Vận dụng..."
+                "biet": "...",
+                "hieu": "...",
+                "van_dung": "..."
               }
             }
           ]
@@ -113,10 +121,25 @@ export const extractInfoFromDocument = async (file: File): Promise<Partial<Input
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash', 
+      model: MODEL_NAME, 
       contents: {
         parts: [
-          { inlineData: { mimeType: file.type === 'application/pdf' ? 'application/pdf' : 'text/plain', data: base64Data } },
+          ...fileData.map(f => {
+              let mimeType = f.type;
+              if (f.name.toLowerCase().endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              else if (f.name.toLowerCase().endsWith('.doc')) mimeType = 'application/msword';
+              else if (f.name.toLowerCase().endsWith('.xlsx')) mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+              else if (f.name.toLowerCase().endsWith('.xls')) mimeType = 'application/vnd.ms-excel';
+              else if (f.type.startsWith('image/')) mimeType = 'image/jpeg';
+              else if (!mimeType || mimeType === 'application/octet-stream') mimeType = 'text/plain';
+
+              return { 
+                inlineData: { 
+                  mimeType: mimeType, 
+                  data: f.base64 
+                } 
+              };
+          }),
           { text: prompt }
         ]
       },
@@ -145,10 +168,93 @@ export const extractInfoFromDocument = async (file: File): Promise<Partial<Input
         throw new Error("Không tìm thấy nội dung bài học/chương trong tài liệu. Hãy kiểm tra lại file đầu vào.");
     }
 
-    return parsed;
+    return {
+        subject: parsed.subject || "",
+        grade: parsed.grade || "",
+        referenceContent: "", // We no longer extract this as text
+        referenceFiles: fileData, // Store the files for later use
+        chapters: parsed.chapters
+    };
   } catch (error: any) {
     console.error("Error extracting info:", error);
     throw new Error(`Lỗi phân tích tài liệu: ${error.message}`);
+  }
+};
+
+export const batchExtractQuestions = async (files: File[]): Promise<Partial<QuestionBankItem>[]> => {
+  const fileData = await Promise.all(files.map(async f => ({
+    base64: await fileToBase64(f),
+    type: f.type,
+    name: f.name
+  })));
+  
+  const prompt = `
+    Bạn là chuyên gia số hóa học liệu. Hãy đọc các file đính kèm (có thể là văn bản hoặc hình ảnh chụp từ bản in/giấy) và thực hiện nhiệm vụ sau:
+
+    NHIỆM VỤ: TRÍCH XUẤT CÂU HỎI
+    - Nhận diện tất cả các câu hỏi có trong tài liệu.
+    - Phân loại từng câu hỏi theo:
+      + Dạng (type): type1 (Trắc nghiệm 4 lựa chọn), type2 (Đúng/Sai), type3 (Ghép nối), type4 (Điền khuyết), essay (Tự luận).
+      + Mức độ (level): biet (Nhận biết), hieu (Thông hiểu), van_dung (Vận dụng), van_dung_cao (Vận dụng cao).
+      + Môn học (subject) và Khối lớp (grade) nếu có thông tin, nếu không hãy để trống.
+      + Bài học/Chủ đề (lesson) nếu có thông tin.
+    - Trích xuất nội dung câu hỏi (content) và đáp án/hướng dẫn giải (answer) nếu có.
+    - Giữ nguyên định dạng HTML cơ bản cho nội dung (ví dụ: công thức, in đậm, xuống dòng).
+
+    Yêu cầu đầu ra: JSON Array (không markdown) chứa các đối tượng có cấu trúc sau:
+    [
+      {
+        "subject": "...",
+        "grade": "...",
+        "lesson": "...",
+        "type": "type1" | "type2" | "type3" | "type4" | "essay",
+        "level": "biet" | "hieu" | "van_dung" | "van_dung_cao",
+        "content": "Nội dung câu hỏi...",
+        "answer": "Đáp án..."
+      },
+      ...
+    ]
+  `;
+
+  try {
+    const response = await getAI().models.generateContent({
+      model: MODEL_NAME, 
+      contents: {
+        parts: [
+          ...fileData.map(f => {
+              let mimeType = f.type;
+              if (f.name.toLowerCase().endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              else if (f.name.toLowerCase().endsWith('.doc')) mimeType = 'application/msword';
+              else if (f.name.toLowerCase().endsWith('.xlsx')) mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+              else if (f.name.toLowerCase().endsWith('.xls')) mimeType = 'application/vnd.ms-excel';
+              else if (f.type.startsWith('image/')) mimeType = 'image/jpeg';
+              else if (!mimeType || mimeType === 'application/octet-stream') mimeType = 'text/plain';
+              
+              return { 
+                inlineData: { 
+                  mimeType: mimeType, 
+                  data: f.base64 
+                } 
+              };
+          }),
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    const text = response.text || "[]";
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        const cleaned = text.replace(/```json/g, '').replace(/```/g, '');
+        return JSON.parse(cleaned);
+    }
+  } catch (error) {
+    console.error("Error batch extracting questions:", error);
+    return [];
   }
 };
 
@@ -167,7 +273,8 @@ export const generateStep1Matrix = async (
         name: chap.name,
         lessons: activeLessons.map(l => ({
             name: l.name,
-            periods: l.periods
+            periods: l.periods,
+            objectives: l.objectives
         }))
       });
       totalSelectedPeriods += activeLessons.reduce((sum, l) => sum + (l.periods || 1), 0);
@@ -245,6 +352,22 @@ export const generateStep1Matrix = async (
   const prompt = `
   Hãy tạo **MA TRẬN ĐỀ THI** (HTML Table) cho môn **${data.subject}**, khối **${data.grade}**.
   
+  ${data.additionalNotes ? `**GHI CHÚ BỔ SUNG TỪ NGƯỜI DÙNG (RÀNG BUỘC BẮT BUỘC):**
+  "${data.additionalNotes}"
+  
+  **QUY TẮC THIẾT KẾ MA TRẬN PHẢI TUÂN THỦ:**
+  1. ƯU TIÊN TUYỆT ĐỐI các yêu cầu trong Ghi chú bổ sung trên. Bạn phải bám sát các yêu cầu này để phân bổ nội dung và mức độ nhận thức.
+  2. NẾU ghi chú yêu cầu tập trung vào một chương/bài cụ thể, hãy dồn số lượng câu hỏi nhiều hơn vào đó.
+  3. CHỈ KHI các yêu cầu trong ghi chú không thể thực hiện được (ví dụ: mâu thuẫn logic hoặc thiếu thông tin), bạn mới được phép tự sinh nội dung theo logic sư phạm thông thường.
+  4. Đảm bảo tổng điểm và tỷ lệ vẫn cân đối theo các ràng buộc kỹ thuật khác.` : ""}
+
+  **TÔ MÀU CỘT (QUAN TRỌNG):**
+  Để dễ quan sát, hãy tô màu nền cho các cột mức độ nhận thức như sau:
+  - Cột **Biết**: Màu xanh dương nhạt (background-color: #e0f2fe)
+  - Cột **Hiểu**: Màu xanh lá nhạt (background-color: #f0fdf4)
+  - Cột **Vận dụng (VD)**: Màu vàng nhạt (background-color: #fefce8)
+  Áp dụng style này vào các thẻ <th> và <td> tương ứng.
+
   **CẤU HÌNH ĐỀ THI:**
   - Loại đề: ${data.examType}
   - Thời gian: ${data.duration} phút
@@ -345,24 +468,49 @@ export const generateStep2Specs = async (
   const prompt = `
   Hãy tạo **BẢNG ĐẶC TẢ CHI TIẾT** (Full HTML Document).
   
+  ${data.additionalNotes ? `**GHI CHÚ BỔ SUNG TỪ NGƯỜI DÙNG (YÊU CẦU ƯU TIÊN):**
+  "${data.additionalNotes}"
+  -> Hãy đảm bảo các mô tả trong Bảng đặc tả phản ánh đúng các yêu cầu bổ sung này.` : ""}
+
+  **TÔ MÀU CỘT (QUAN TRỌNG):**
+  Để dễ quan sát, hãy tô màu nền cho các cột mức độ nhận thức như sau:
+  - Cột **Biết**: Màu xanh dương nhạt (background-color: #e0f2fe)
+  - Cột **Hiểu**: Màu xanh lá nhạt (background-color: #f0fdf4)
+  - Cột **Vận dụng (VD)**: Màu vàng nhạt (background-color: #fefce8)
+  Áp dụng style này vào các thẻ <th> và <td> tương ứng.
+
   **DỮ LIỆU ĐẦU VÀO:**
-  1. MA TRẬN ĐỀ THI:
+  1. THÔNG TIN CHUNG: Môn ${data.subject}, Khối ${data.grade}.
+  2. MA TRẬN ĐỀ THI:
   ${matrixContent}
   
-  2. YÊU CẦU CẦN ĐẠT (Objectives):
+  3. YÊU CẦU CẦN ĐẠT (Objectives):
   ${objectivesMap.join('\n')}
 
-  **YÊU CẦU OUTPUT:**
+  ${data.subject.toLowerCase().includes('tin học') ? `
+  **TÀI LIỆU THAM KHẢO ĐẶC TẢ MÔN TIN HỌC:**
+  ${INFORMATICS_SPECS_REFERENCE}
+  ` : ''}
+
+  **YÊU CẦU OUTPUT QUAN TRỌNG:**
   1. Xuất ra Full HTML Document (<!DOCTYPE html>...). Font Times New Roman 13pt.
   2. **CẤU TRÚC BẢNG BẮT BUỘC:**
      Sử dụng chính xác cấu trúc Header sau:
      ${headerStructure}
-  3. **NỘI DUNG:**
-     - Cột "Mức độ kiểm tra, đánh giá": Điền nội dung YCCĐ (Biết:..., Hiểu:..., Vận dụng:...) tương ứng với bài học.
-     - Các cột Dạng I, II, III...: Điền CHÍNH XÁC mã câu hỏi (C1, C2...) lấy từ Ma trận sang.
-  4. **FOOTER (TỔNG KẾT):**
+  3. **NỘI DUNG CỘT "Mức độ kiểm tra, đánh giá":**
+     - PHẢI điền nội dung chi tiết cho từng mức độ: **Biết**, **Hiểu**, **Vận dụng**.
+     - ${data.subject.toLowerCase().includes('tin học') ? 'ƯU TIÊN sử dụng nội dung từ "TÀI LIỆU THAM KHẢO ĐẶC TẢ MÔN TIN HỌC" ở trên nếu bài học tương ứng có trong tài liệu.' : 'Dựa vào kiến thức chuyên môn của môn học để soạn thảo nội dung chi tiết.'}
+     - Nếu dữ liệu đầu vào (Yêu cầu cần đạt) bị thiếu hoặc chỉ có dấu "...", bạn CÓ TRÁCH NHIỆM tự soạn thảo nội dung Yêu cầu cần đạt chuẩn kiến thức kỹ năng cho bài học đó dựa trên tên bài, môn học và khối lớp.
+     - TUYỆT ĐỐI KHÔNG ĐƯỢC để trống hoặc chỉ ghi dấu ba chấm "...".
+     - Định dạng: 
+       **Biết:** [Nội dung chi tiết]
+       **Hiểu:** [Nội dung chi tiết]
+       **Vận dụng:** [Nội dung chi tiết]
+  4. **CÁC CỘT DẠNG I, II, III...:**
+     - Điền CHÍNH XÁC mã câu hỏi (C1, C2...) lấy từ Ma trận sang.
+  5. **FOOTER (TỔNG KẾT):**
      Hiển thị tổng số câu và phân phối điểm số (Trắc nghiệm 7.0 - Tự luận 3.0).
-  5. KHÔNG trả về markdown fences. Border 1px solid black.
+  6. KHÔNG trả về markdown fences. Border 1px solid black.
   `;
 
   try {
@@ -486,52 +634,109 @@ export const generateStep3Exam = async (
     
     /* Utility */
     .scratch-icon { width: 16px; height: 16px; margin-right: 4px; }
+    
+    /* Screenshot Container */
+    .scratch-canvas {
+      background-color: #F9F9F9;
+      border: 1px solid #D0D0D0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      display: inline-block;
+      min-width: 300px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      position: relative;
+    }
+    .scratch-canvas::before {
+      content: 'Scratch Capture';
+      position: absolute;
+      top: 0;
+      right: 10px;
+      font-size: 8px;
+      color: #999;
+      text-transform: uppercase;
+    }
   `;
 
   // Enhanced Scratch Instruction with strict formatting for E-Blocks and Repeat Until
   const scratchInstruction = isIT 
-    ? `**YÊU CẦU VỀ SCRATCH (QUAN TRỌNG - BẮT BUỘC TUÂN THỦ):**
+    ? `**YÊU CẦU VỀ SCRATCH VÀ TRÌNH BÀY (QUAN TRỌNG - BẮT BUỘC TUÂN THỦ):**
        1. **CHỦ ĐỀ:** Nếu câu hỏi thuộc chủ đề "Giải quyết vấn đề với sự trợ giúp của máy tính", **BẮT BUỘC CHỈ ĐƯỢC PHÉP** sử dụng ngôn ngữ lập trình **SCRATCH**. Tuyệt đối **KHÔNG** dùng Python, Pascal, hay C++.
        
-       2. **HÌNH ẢNH CÂU LỆNH (Sử dụng HTML/CSS chuẩn):**
+       2. **TRÌNH BÀY DẠNG ẢNH CHỤP MÀN HÌNH (SCREENSHOT):**
+          - **BẮT BUỘC** bọc toàn bộ các khối lệnh Scratch trong một thẻ <div class="scratch-canvas">.
+          - Thẻ này sẽ giả lập một khung hình chụp màn hình (screenshot) giúp câu hỏi trực quan hơn.
+
+       3. **HÌNH ẢNH CÂU LỆNH (Sử dụng HTML/CSS chuẩn):**
           - Tuyệt đối KHÔNG mô tả lệnh bằng lời (VD: "Khối di chuyển 10 bước").
           - **BẮT BUỘC** phải tạo hình ảnh khối lệnh bằng các thẻ HTML với Class CSS mới đã định nghĩa.
-          - Sử dụng **BIẾN CSS** thông qua các class chủ đề (sc-motion, sc-control, sc-events...) để đảm bảo màu sắc chuẩn xác.
+          - Sử dụng **BIẾN CSS** thông qua các class chủ đề (sc-motion, sc-control, sc-events, sc-looks, sc-sensing, sc-operators, sc-variables, sc-custom) để đảm bảo màu sắc chuẩn xác.
 
-       3. **CẤU TRÚC BLOCK NÂNG CAO (MẪU CHUẨN - STRICT RULE):**
+       3. **CẤU TRÚC BLOCK NÂNG CAO (MẪU CHUẨN BẰNG TIẾNG VIỆT - STRICT RULE):**
           
           **A. Khối đơn giản (Simple Block):**
-          <span class="scratch-block sc-motion">move <span class="scratch-input">10</span> steps</span>
-          <span class="scratch-block sc-events">when flag clicked</span>
+          <span class="scratch-block sc-motion">di chuyển <span class="scratch-input">10</span> bước</span>
+          <span class="scratch-block sc-events">khi bấm vào cờ xanh</span>
+          <span class="scratch-block sc-looks">nói <span class="scratch-input">Xin chào!</span> trong <span class="scratch-input">2</span> giây</span>
+          <span class="scratch-block sc-variables">đặt <span class="scratch-dropdown">my variable</span> thành <span class="scratch-input">0</span></span>
 
-          **B. Vòng lặp Repeat / Forever (C-Block):**
+          **B. Vòng lặp (C-Block):**
+          <!-- Lặp lại số lần -->
           <div class="scratch-c-block sc-control">
-            <div class="scratch-c-header">repeat <span class="scratch-input">10</span></div>
+            <div class="scratch-c-header">lặp lại <span class="scratch-input">10</span></div>
             <div class="scratch-c-body">
-               <!-- Các khối con BẮT BUỘC phải nằm trong body này -->
-               <span class="scratch-block sc-motion">move <span class="scratch-input">10</span> steps</span>
+               <span class="scratch-block sc-motion">di chuyển <span class="scratch-input">10</span> bước</span>
+            </div>
+            <div class="scratch-c-footer"></div>
+          </div>
+          
+          <!-- Lặp lại cho đến khi (Lặp có điều kiện) -->
+          <div class="scratch-c-block sc-control">
+            <div class="scratch-c-header">lặp lại cho đến khi <span class="scratch-hex sc-sensing">đang chạm <span class="scratch-dropdown">cạnh</span> ?</span></div>
+            <div class="scratch-c-body">
+               <span class="scratch-block sc-motion">di chuyển <span class="scratch-input">10</span> bước</span>
             </div>
             <div class="scratch-c-footer"></div>
           </div>
 
-          **C. Điều kiện If / Else (E-Block):**
+          **C. Điều kiện Nếu ... thì / Nếu không thì (E-Block):**
+          <!-- Nếu ... thì -->
           <div class="scratch-c-block sc-control">
-            <div class="scratch-c-header">if <span class="scratch-hex sc-sensing">key <span class="scratch-dropdown">space</span> pressed?</span> then</div>
+            <div class="scratch-c-header">nếu <span class="scratch-hex sc-operators"><span class="scratch-variable">điểm</span> > <span class="scratch-input">50</span></span> thì</div>
             <div class="scratch-c-body">
-               <span class="scratch-block sc-looks">say <span class="scratch-input">Hello!</span></span>
-            </div>
-            <div class="scratch-c-else">else</div>
-            <div class="scratch-c-body">
-               <span class="scratch-block sc-looks">think <span class="scratch-input">Hmm...</span></span>
+               <span class="scratch-block sc-looks">nói <span class="scratch-input">Bạn đã thắng!</span></span>
             </div>
             <div class="scratch-c-footer"></div>
           </div>
 
-          **D. INPUT SHAPES:**
-          - Số/Chữ: <span class="scratch-input">10</span>
-          - Dropdown: <span class="scratch-dropdown">meow</span>
-          - Điều kiện (Lục giác): <span class="scratch-hex sc-sensing">...</span>
-          - Biến (Tròn): <span class="scratch-variable">my variable</span>
+          <!-- Nếu ... thì ... nếu không thì -->
+          <div class="scratch-c-block sc-control">
+            <div class="scratch-c-header">nếu <span class="scratch-hex sc-sensing">phím <span class="scratch-dropdown">trắng</span> được bấm?</span> thì</div>
+            <div class="scratch-c-body">
+               <span class="scratch-block sc-motion">thay đổi y một lượng <span class="scratch-input">10</span></span>
+            </div>
+            <div class="scratch-c-else">nếu không thì</div>
+            <div class="scratch-c-body">
+               <span class="scratch-block sc-motion">thay đổi y một lượng <span class="scratch-input">-10</span></span>
+            </div>
+            <div class="scratch-c-footer"></div>
+          </div>
+          
+          **D. Khối lệnh tùy chỉnh (Custom Block / My Blocks):**
+          <span class="scratch-block sc-custom">Định nghĩa <span class="scratch-input">Nhảy</span> <span class="scratch-input">độ cao</span></span>
+          <div class="scratch-c-block sc-control">
+            <div class="scratch-c-header">lặp lại <span class="scratch-input">10</span></div>
+            <div class="scratch-c-body">
+               <span class="scratch-block sc-motion">thay đổi y một lượng <span class="scratch-variable">độ cao</span></span>
+            </div>
+            <div class="scratch-c-footer"></div>
+          </div>
+
+          **E. INPUT SHAPES:**
+          - Số/Chữ (Trắng): <span class="scratch-input">10</span>
+          - Dropdown (Có mũi tên): <span class="scratch-dropdown">vị trí ngẫu nhiên</span>
+          - Điều kiện (Lục giác): <span class="scratch-hex sc-sensing">đang chạm <span class="scratch-dropdown">con trỏ chuột</span> ?</span>
+          - Biến/Toán tử (Tròn): <span class="scratch-variable">my variable</span> hoặc <span class="scratch-variable sc-operators"><span class="scratch-input">1</span> + <span class="scratch-input">1</span></span>
 
        4. **BẮT BUỘC:** Chèn đoạn CSS sau vào thẻ <style> trong <head> của file HTML trả về:
           ${scratchCssDef}
@@ -545,14 +750,50 @@ export const generateStep3Exam = async (
   if (counts.type4 > 0) structureInstructions += `- PHẦN IV (Điền khuyết): ${counts.type4} câu (1.0đ/câu).\n`;
   structureInstructions += `- PHẦN V (Tự luận): ${counts.essay} câu (Tổng 3.0 điểm).\n`;
 
+  const allEssayScores = [
+      ...data.essayScoreDistribution.biet,
+      ...data.essayScoreDistribution.hieu,
+      ...data.essayScoreDistribution.van_dung
+  ];
+  const essayScoreText = allEssayScores.length > 0 ? `Chi tiết điểm từng câu tự luận: ${allEssayScores.map(s => s + 'đ').join(', ')}.` : '';
+
+  const validationInstructions = `
+  **KIỂM TRA TÍNH NHẤT QUÁN (BẮT BUỘC TRƯỚC KHI TRẢ VỀ KẾT QUẢ):**
+  - Bạn PHẢI đếm chính xác số lượng câu hỏi được tạo ra cho từng phần và đối chiếu với Bảng đặc tả.
+  ${counts.type1 > 0 ? `- PHẦN I phải có ĐÚNG ${counts.type1} câu. Tổng điểm: ${counts.type1 * 0.25} điểm.` : ''}
+  ${counts.type2 > 0 ? `- PHẦN II phải có ĐÚNG ${counts.type2} câu. Tổng điểm: ${counts.type2 * 1.0} điểm.` : ''}
+  ${counts.type3 > 0 ? `- PHẦN III phải có ĐÚNG ${counts.type3} câu. Tổng điểm: ${counts.type3 * 1.0} điểm.` : ''}
+  ${counts.type4 > 0 ? `- PHẦN IV phải có ĐÚNG ${counts.type4} câu. Tổng điểm: ${counts.type4 * 1.0} điểm.` : ''}
+  ${counts.essay > 0 ? `- PHẦN V (Tự luận) phải có ĐÚNG ${counts.essay} câu. Tổng điểm: 3.0 điểm. ${essayScoreText}` : ''}
+  - TỔNG ĐIỂM TOÀN BÀI PHẢI CHÍNH XÁC LÀ 10.0 ĐIỂM.
+  - KHÔNG ĐƯỢC TỰ Ý THÊM HOẶC BỚT CÂU HỎI SO VỚI BẢNG ĐẶC TẢ. NẾU THẤY LỆCH, HÃY TỰ ĐỘNG SỬA LẠI CHO KHỚP.
+  `;
+
+  let preSelectedQuestionsText = "";
+  if (data.preSelectedQuestions && data.preSelectedQuestions.length > 0) {
+    preSelectedQuestionsText = `\n**CÂU HỎI CHỈ ĐỊNH TỪ KHO (BẮT BUỘC SỬ DỤNG):**\nBạn BẮT BUỘC phải đưa các câu hỏi sau vào đúng phần tương ứng trong đề thi:\n`;
+    data.preSelectedQuestions.forEach((q, idx) => {
+      preSelectedQuestionsText += `\n--- Câu chỉ định ${idx + 1} (Dạng: ${q.type}, Mức độ: ${q.level}) ---\nNội dung: ${q.content}\nĐáp án: ${q.answer || 'Không có'}\n`;
+    });
+  }
+
   const prompt = `
   Dựa trên **Bảng đặc tả** sau (HTML):
   ${specsContent}
+
+  ${data.referenceFiles && data.referenceFiles.length > 0 ? `**NỘI DUNG THAM KHẢO TỪ TÀI LIỆU ĐÍNH KÈM (ƯU TIÊN SỬ DỤNG ĐỂ TẠO CÂU HỎI).**` : ""}
+  ${data.additionalNotes ? `**GHI CHÚ BỔ SUNG TỪ NGƯỜI DÙNG (BẮT BUỘC TUÂN THỦ):**\n${data.additionalNotes}` : ""}
+  ${preSelectedQuestionsText}
 
   Hãy soạn thảo **ĐỀ THI HOÀN CHỈNH** và **HƯỚNG DẪN CHẤM** (Đáp án) tuân thủ nghiêm ngặt định dạng văn bản mẫu (MAU DE.pdf).
   
   ${scratchInstruction}
   ${structureInstructions}
+  ${validationInstructions}
+
+  **YÊU CẦU ĐỊNH DẠNG BẢNG (TABLE GRID):**
+  - Tất cả các bảng trong đề (Bảng Ma trận, Bảng Đặc tả, Bảng trong nội dung câu hỏi) **BẮT BUỘC** sử dụng định dạng **Table Grid** (đường kẻ đơn, liền mạch, màu đen).
+  - Sử dụng CSS: border: 1px solid black; border-collapse: collapse;
 
   **YÊU CẦU HÌNH THỨC & NỘI DUNG:**
 
@@ -572,7 +813,11 @@ export const generateStep3Exam = async (
   - Sau đó mới đến danh sách câu hỏi.
   - **ĐỊNH DẠNG CÂU HỎI (QUAN TRỌNG):**
     Câu X. (Mức độ - Bài Y) [Nội dung câu hỏi]?
-    A. ... B. ... C. ... D. ...
+    A. ...
+    B. ...
+    C. ...
+    D. ...
+    (Mỗi đáp án trắc nghiệm nằm trên 1 dòng riêng biệt)
     
     *Ví dụ: Câu 1. (NB - Bài 10) Thiết bị nào sau đây là thiết bị vào?*
     *(Chú thích Mức độ: NB=Biết, TH=Hiểu, VD=Vận dụng, VDC=Vận dụng cao)*
@@ -599,22 +844,54 @@ export const generateStep3Exam = async (
   - Phần II: Với mỗi câu hỏi, kẻ bảng 3 cột (Phương án | Đúng | Sai) và đánh dấu X vào ô tương ứng.
   - Phần III: Đáp án dạng liệt kê (VD: 1-B, 2-A...) hoặc bảng.
   - Phần IV: Đáp án từ khóa.
-  - Phần V: Kẻ **BẢNG 3 CỘT**: | Câu | Nội dung | Điểm |. Tổng điểm phần này là 3.0 điểm.
+  - Phần V: **BẮT BUỘC** kẻ bảng 3 cột cho mỗi câu tự luận: | Ý/Bước giải | Nội dung trả lời chi tiết | Điểm |.
+    - **YÊU CẦU CHI TIẾT (QUAN TRỌNG):** Thang điểm phải được chia nhỏ chi tiết nhất có thể, ưu tiên mức **0.25 điểm** cho mỗi ý nhỏ (nếu câu hỏi ngắn thì tối thiểu **0.5 điểm**). KHÔNG ĐƯỢC chấm điểm nguyên câu 1.0đ hay 2.0đ mà không có breakdown chi tiết.
+    - Tổng điểm phần này là 3.0 điểm.
   
+  **7. ĐỊNH DẠNG CÂU HỎI CÓ BẢNG:**
+  - Với bất kỳ câu hỏi nào có chứa bảng dữ liệu, bảng đó phải được kẻ khung rõ ràng (Table Grid). Tuyệt đối không để ẩn viền.
+
   **YÊU CẦU OUTPUT:**
   1. Chỉ xuất ra Full HTML Document (<!DOCTYPE html>...). 
-  2. Font Times New Roman, size 13pt, line-height 1.2.
+  2. Font Times New Roman, size 14pt, line-height 1.0.
   3. KHÔNG trả về markdown.
   4. CSS quan trọng:
+     - body, p { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; }
      - .header-table td { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
-     - table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+     - table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid black; }
      - td, th { border: 1px solid black; padding: 5px; vertical-align: top; }
   `;
 
   try {
+    let contents: any = prompt;
+    
+    if (data.referenceFiles && data.referenceFiles.length > 0) {
+      contents = {
+        parts: [
+          ...data.referenceFiles.map(f => {
+              let mimeType = f.type;
+              if (f.name.toLowerCase().endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              else if (f.name.toLowerCase().endsWith('.doc')) mimeType = 'application/msword';
+              else if (f.name.toLowerCase().endsWith('.xlsx')) mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+              else if (f.name.toLowerCase().endsWith('.xls')) mimeType = 'application/vnd.ms-excel';
+              else if (f.type.startsWith('image/')) mimeType = 'image/jpeg';
+              else if (!mimeType || mimeType === 'application/octet-stream') mimeType = 'text/plain';
+              
+              return { 
+                inlineData: { 
+                  mimeType: mimeType, 
+                  data: f.base64 
+                } 
+              };
+          }),
+          { text: prompt }
+        ]
+      };
+    }
+
     const response = await getAI().models.generateContent({
       model: MODEL_NAME,
-      contents: prompt,
+      contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7, 

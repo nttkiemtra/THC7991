@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account information and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User's email address" },
+        "displayName": { "type": "string", "description": "User's full name" },
+        "photoURL": { "type": "string", "format": "uri", "description": "User's profile picture URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created" }
+      },
+      "required": ["uid", "email"]
+    },
+    "SavedExam": {
+      "title": "SavedExam",
+      "description": "A generated exam paper with its matrix and specs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string", "description": "Owner's UID" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "matrix": { "type": "string", "description": "HTML or Markdown string of the matrix" },
+        "specs": { "type": "string", "description": "HTML or Markdown string of the specs" },
+        "exam": { "type": "string", "description": "HTML or Markdown string of the exam paper" }
+      },
+      "required": ["id", "uid", "title", "subject", "grade", "createdAt", "matrix", "specs", "exam"]
+    },
+    "QuestionBankItem": {
+      "title": "QuestionBankItem",
+      "description": "A single question stored in the user bank",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string", "description": "Owner's UID" },
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "lesson": { "type": "string" },
+        "type": { "type": "string", "enum": ["type1", "type2", "type3", "type4", "essay"] },
+        "level": { "type": "string", "enum": ["biet", "hieu", "van_dung", "van_dung_cao"] },
+        "content": { "type": "string" },
+        "answer": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "subject", "grade", "type", "level", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/profile/data": {
+      "schema": "UserProfile",
+      "description": "The private profile of a user"
+    },
+    "/users/{userId}/exams/{examId}": {
+      "schema": "SavedExam",
+      "description": "Collection of exams belonging to a user"
+    },
+    "/users/{userId}/questions/{questionId}": {
+      "schema": "QuestionBankItem",
+      "description": "Collection of questions belonging to a user"
+    }
+  }
+}

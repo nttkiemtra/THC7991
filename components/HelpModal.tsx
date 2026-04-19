@@ -29,17 +29,16 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="p-8 space-y-8">
           {/* Step 1 */}
           <div className="flex gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600 font-bold text-xl">1</div>
+            <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold text-xl">1</div>
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <Upload className="w-4 h-4 text-teal-600" />
-                Thiết lập & Dữ liệu đầu vào
+                <Upload className="w-4 h-4 text-blue-600" />
+                Dữ liệu & Cấu trúc
               </h3>
               <ul className="space-y-2 text-slate-600 text-sm list-disc pl-5">
-                <li>Nhập thông tin môn học, khối lớp, thời gian và loại bài kiểm tra.</li>
-                <li><strong>Quan trọng:</strong> Tải lên file <em>Kế hoạch dạy học</em> hoặc <em>Phân phối chương trình</em> (PDF, Word, Ảnh). AI sẽ tự động đọc tên bài học và Yêu cầu cần đạt.</li>
-                <li>Chọn các bài học sẽ có trong đề thi từ danh sách bên phải.</li>
-                <li>Cấu hình số lượng câu hỏi cho từng dạng (Trắc nghiệm, Đúng/Sai, Tự luận...).</li>
+                <li>Tải lên file <em>Phân phối chương trình</em> (PDF, Word, Ảnh). AI sẽ tự động trích xuất các chương và bài học.</li>
+                <li>Chọn các bài học sẽ có trong đề. Bạn có thể <strong>"Chọn câu hỏi chỉ định"</strong> từ Kho câu hỏi để AI ưu tiên đưa vào đề thi.</li>
+                <li>Thiết lập số lượng câu hỏi cho từng dạng (Trắc nghiệm, Đúng/Sai, Ghép nối, Điền khuyết, Tự luận).</li>
               </ul>
             </div>
           </div>
@@ -50,14 +49,11 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                Xây dựng Ma trận
+                Ma trận đề thi
               </h3>
-              <p className="text-sm text-slate-600 mb-2">
-                Hệ thống tự động phân phối câu hỏi vào các ô nhận thức (Biết, Hiểu, Vận dụng) dựa trên cấu hình của bạn.
-              </p>
               <ul className="space-y-2 text-slate-600 text-sm list-disc pl-5">
-                <li>Kiểm tra kỹ tổng điểm và tỉ lệ % các mức độ nhận thức.</li>
-                <li>Nếu chưa ưng ý, bạn có thể bấm "Tạo lại" hoặc sửa trực tiếp trên giao diện.</li>
+                <li>Hệ thống tự động phân bổ câu hỏi vào các cấp độ (Biết, Hiểu, Vận dụng) để đảm bảo tỉ lệ điểm chuẩn.</li>
+                <li>Kiểm tra tổng điểm và bấm <strong>"Tùy chỉnh hiển thị"</strong> để thay đổi font chữ, lề in ấn.</li>
               </ul>
             </div>
           </div>
@@ -68,26 +64,26 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-purple-600" />
-                Bảng Đặc tả
+                Bảng đặc tả
               </h3>
               <p className="text-sm text-slate-600">
-                AI sẽ ánh xạ từ Ma trận sang các Yêu cầu cần đạt cụ thể của từng bài học. Bước này là cầu nối quan trọng để ra câu hỏi chính xác.
+                AI sẽ tự động soạn thảo các Yêu cầu cần đạt chi tiết cho từng câu hỏi dựa trên nội dung bài học đã chọn, đảm bảo tính khoa học và bám sát chương trình.
               </p>
             </div>
           </div>
 
           {/* Step 4 */}
           <div className="flex gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold text-xl">4</div>
+            <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold text-xl">4</div>
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <FileSignature className="w-4 h-4 text-emerald-600" />
-                Đề thi chi tiết & Xuất file
+                <FileSignature className="w-4 h-4 text-blue-600" />
+                Đề thi & Chỉnh sửa trực tiếp
               </h3>
               <ul className="space-y-2 text-slate-600 text-sm list-disc pl-5">
-                <li>AI soạn thảo câu hỏi chi tiết và Đáp án/Hướng dẫn chấm.</li>
-                <li>Hỗ trợ đặc biệt cho môn Tin học (vẽ khối lệnh Scratch chuẩn).</li>
-                <li><strong>Xuất file:</strong> Bấm nút <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-xs font-medium"><Download className="w-3 h-3 mr-1"/> Xuất File Word</span> để tải về bản .doc chỉnh sửa được.</li>
+                <li>AI soạn nội dung câu hỏi và Đáp án chi tiết. Riêng Tin học hỗ trợ <strong>khối lệnh Scratch</strong> sinh động.</li>
+                <li><strong>Chế độ sửa:</strong> Bấm "Chỉnh sửa" để thay đổi nội dung trực tiếp trên đề thi, "Chèn từ kho" để thêm câu hỏi lưu trữ hoặc "Lưu vào kho" để tái sử dụng câu hỏi AI vừa tạo.</li>
+                <li><strong>Xuất file:</strong> Tải đề thi về định dạng Word (.docx), Excel hoặc file Zip đầy đủ.</li>
               </ul>
             </div>
           </div>

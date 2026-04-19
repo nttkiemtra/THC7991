@@ -1,5 +1,4 @@
 
-
 export enum AppStep {
   INPUT = 0,
   MATRIX = 1,
@@ -45,6 +44,31 @@ export interface EssayScoreDistribution {
   van_dung: number[];
 }
 
+export interface SavedExam {
+  id: string;
+  uid?: string;
+  title: string;
+  subject: string;
+  grade: string;
+  createdAt: string;
+  matrix: string;
+  specs: string;
+  exam: string;
+}
+
+export interface QuestionBankItem {
+  id: string;
+  uid?: string;
+  subject: string;
+  grade: string;
+  lesson: string;
+  type: keyof QuestionConfig;
+  level: 'biet' | 'hieu' | 'van_dung' | 'van_dung_cao';
+  content: string;
+  answer?: string;
+  createdAt: string;
+}
+
 export interface InputData {
   subject: string;
   grade: string;
@@ -52,6 +76,9 @@ export interface InputData {
   examType: string;
   topics: string; // Legacy field, kept for fallback
   additionalNotes: string;
+  referenceContent: string; // Combined text content from uploaded files for question generation
+  referenceFiles?: { name: string, type: string, base64: string }[]; // Store files for later use
+  preSelectedQuestions?: QuestionBankItem[]; // Questions selected from the bank
   
   // New structured data
   chapters: Chapter[]; 
@@ -72,4 +99,26 @@ export type Role = 'user' | 'model';
 export interface ChatMessage {
   role: Role;
   text: string;
+}
+
+export interface VisualConfig {
+  fontFamily: string;
+  fontSize: string;
+  lineHeight: string;
+  margins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  primaryColor: string;
+  headerStyle: 'standard' | 'minimal' | 'boxed';
+}
+
+export interface ExamError {
+  id: string;
+  type: 'scoring' | 'formatting' | 'citation' | 'content';
+  message: string;
+  severity: 'low' | 'medium' | 'high';
+  suggestedFix?: string;
 }

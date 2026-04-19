@@ -1,11 +1,14 @@
 
 import React from 'react';
 
+import { VisualConfig } from '../types';
+
 interface Props {
   content: string;
+  config?: VisualConfig;
 }
 
-const MarkdownView: React.FC<Props> = ({ content }) => {
+const MarkdownView: React.FC<Props> = ({ content, config }) => {
   // Robust detection of HTML content
   const isHtml = (text: string) => {
     const trimmed = text.trim();
@@ -25,10 +28,10 @@ const MarkdownView: React.FC<Props> = ({ content }) => {
             <style>{`
                 /* Scoped styles for the document preview */
                 .doc-preview-container {
-                    font-family: 'Times New Roman', serif;
-                    font-size: 13pt;
-                    line-height: 1.3;
-                    color: #000;
+                    font-family: ${config?.fontFamily || "'Times New Roman', serif"};
+                    font-size: ${config?.fontSize || '13pt'};
+                    line-height: ${config?.lineHeight || '1.3'};
+                    color: ${config?.primaryColor || '#000'};
                 }
                 
                 /* Standard Table Styling */
@@ -94,7 +97,7 @@ const MarkdownView: React.FC<Props> = ({ content }) => {
             <div className="bg-slate-800 px-4 py-1 text-xs text-slate-400 font-mono uppercase tracking-wider border-b border-slate-700">
               {codeBlockLanguage || 'Code'}
             </div>
-            <pre className="p-4 text-sm text-teal-300 font-mono overflow-x-auto whitespace-pre">
+            <pre className="p-4 text-sm text-blue-300 font-mono overflow-x-auto whitespace-pre">
               {codeBlockContent.join('\n')}
             </pre>
           </div>
@@ -115,22 +118,22 @@ const MarkdownView: React.FC<Props> = ({ content }) => {
 
     // 2. Normal Markdown Rendering
     if (line.startsWith('# ')) {
-      elements.push(<h1 key={index} className="text-2xl font-bold text-primary mt-6 mb-3 border-b border-teal-100 pb-2">{line.replace('# ', '')}</h1>);
+      elements.push(<h1 key={index} className="text-2xl font-bold text-primary mt-6 mb-3 border-b border-blue-100 pb-2">{line.replace('# ', '')}</h1>);
       return;
     }
     if (line.startsWith('## ')) {
-      elements.push(<h2 key={index} className="text-xl font-bold text-teal-800 mt-5 mb-2">{line.replace('## ', '')}</h2>);
+      elements.push(<h2 key={index} className="text-xl font-bold text-blue-800 mt-5 mb-2">{line.replace('## ', '')}</h2>);
       return;
     }
     if (line.startsWith('### ')) {
-      elements.push(<h3 key={index} className="text-lg font-semibold text-teal-700 mt-4 mb-2">{line.replace('### ', '')}</h3>);
+      elements.push(<h3 key={index} className="text-lg font-semibold text-blue-700 mt-4 mb-2">{line.replace('### ', '')}</h3>);
       return;
     }
     
     // Legacy Markdown Table Row (fallback)
     if (line.trim().startsWith('|')) {
        elements.push(
-          <div key={index} className="font-mono text-xs sm:text-sm whitespace-pre text-slate-700 bg-white border-b border-slate-200 hover:bg-teal-50 px-1 overflow-x-auto">
+          <div key={index} className="font-mono text-xs sm:text-sm whitespace-pre text-slate-700 bg-white border-b border-slate-200 hover:bg-blue-50 px-1 overflow-x-auto">
             {line}
           </div>
        );
@@ -147,7 +150,7 @@ const MarkdownView: React.FC<Props> = ({ content }) => {
       <div key={index} className="min-h-[1.5em] mb-1 leading-relaxed text-slate-800 font-sans">
         {parts.map((part, i) => {
           if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={i} className="font-bold text-teal-900">{part.slice(2, -2)}</strong>;
+            return <strong key={i} className="font-bold text-blue-900">{part.slice(2, -2)}</strong>;
           }
           return <span key={i}>{part}</span>;
         })}
