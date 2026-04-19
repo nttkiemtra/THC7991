@@ -1238,26 +1238,35 @@ const App: React.FC = () => {
                                  className="w-9 h-9 rounded-full border-2 border-white shadow-sm cursor-pointer" 
                                  alt="Avatar" />
                             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                                <button onClick={() => signOut(auth)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                <button type="button" onClick={() => signOut(auth)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
                                     <LogOut className="w-4 h-4" /> Đăng xuất
                                 </button>
                             </div>
                         </div>
                     </div>
                   ) : (
-                    <button onClick={() => signInWithPopup(auth, googleProvider)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        signInWithPopup(auth, googleProvider).catch(err => {
+                          console.error("Auth Error:", err);
+                          alert(`Lỗi đăng nhập: ${err.message}\n\nMẹo: Hãy kiểm tra xem bạn đã thêm tên miền này vào 'Authorized domains' trong Firebase Console chưa.`);
+                        });
+                      }} 
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95"
+                    >
                         <LogIn className="w-4 h-4" />
                         <span>Đăng nhập</span>
                     </button>
                   )}
 
-                  <button onClick={() => setShowHelp(true)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Hướng dẫn sử dụng">
+                  <button type="button" onClick={() => setShowHelp(true)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Hướng dẫn sử dụng">
                       <HelpCircle className="w-5 h-5" />
                   </button>
-                  <button onClick={handleLogout} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Đổi API Key">
+                  <button type="button" onClick={handleLogout} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Đổi API Key">
                       <LogOut className="w-5 h-5" />
                   </button>
-                  <button onClick={() => window.location.reload()} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Làm mới">
+                  <button type="button" onClick={() => window.location.reload()} className="p-2 hover:bg-slate-100 rounded-full text-slate-500" title="Làm mới">
                       <RotateCcw className="w-5 h-5" />
                   </button>
               </div>
