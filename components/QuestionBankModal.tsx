@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, Plus, Trash2, Edit, Check, Database, FileUp, AlertCircle, Loader2, SortAsc } from 'lucide-react';
+import { X, Search, Plus, Trash2, Edit, Check, Database, FileUp, AlertCircle, Loader2, SortAsc, Download, FileSpreadsheet } from 'lucide-react';
 import { QuestionBankItem, QuestionConfig } from '../types';
 import Button from './Button';
 import { batchExtractQuestions } from '../services/geminiService';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, where, doc, setDoc, deleteDoc, orderBy, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import * as XLSX from 'xlsx';
 
 interface QuestionBankModalProps {
   isOpen: boolean;
@@ -189,6 +192,47 @@ export default function QuestionBankModal({
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
+    // Check if it's an Excel file for special processing
+    const isExcel = files.some(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv'));
+    
+    if (isExcel) {
+      try {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          const bstr = evt.target?.result;
+          const wb = XLSX.read(bstr, { type: 'binary' });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+          const data = XLSX.utils.sheet_to_json(ws);
+          
+          const importedQuestions: Partial<QuestionBankItem>[] = data.map((item: any) => ({
+            content: item['Nội dung'] || item['Content'] || '',
+            answer: item['Đáp án'] || item['Answer'] || '',
+            subject: item['Môn học'] || item['Subject'] || filterSubject || 'Chưa phân loại',
+            grade: item['Khối lớp'] || item['Grade'] || filterGrade || 'Khác',
+            lesson: item['Bài học'] || item['Lesson'] || '',
+            type: (item['Dạng'] || item['Type'] || 'type1').toLowerCase().includes('trắc nghiệm') ? 'type1' : 
+                  (item['Dạng'] || item['Type'] || 'type1').toLowerCase().includes('tự luận') ? 'essay' : 
+                  (item['Dạng'] || item['Type'] || 'type1').toLowerCase().includes('đúng/sai') ? 'type2' : 
+                  (item['Dạng'] || item['Type'] || 'type1').toLowerCase().includes('ghép') ? 'type3' : 
+                  (item['Dạng'] || item['Type'] || 'type1').toLowerCase().includes('điền') ? 'type4' : 'type1',
+            level: (item['Mức độ'] || item['Level'] || 'biet').toLowerCase().includes('nhận biết') ? 'biet' : 
+                   (item['Mức độ'] || item['Level'] || 'biet').toLowerCase().includes('thông hiểu') ? 'hieu' : 
+                   (item['Mức độ'] || item['Level'] || 'biet').toLowerCase().includes('cao') ? 'van_dung_cao' : 'van_dung'
+          }));
+          
+          setExtractedQuestions(importedQuestions);
+          setIsBatchImporting(true);
+        };
+        reader.readAsBinaryString(file);
+      } catch (err) {
+        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng.');
+      }
+      if (batchFileInputRef.current) batchFileInputRef.current.value = '';
+      return;
+    }
+
     setIsExtracting(true);
     try {
       const results = await batchExtractQuestions(files);
@@ -200,6 +244,34 @@ export default function QuestionBankModal({
       setIsExtracting(false);
       if (batchFileInputRef.current) batchFileInputRef.current.value = '';
     }
+  };
+
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        'Môn học': 'Toán',
+        'Khối lớp': 'Lớp 10',
+        'Bài học': 'Bài 1: Mệnh đề',
+        'Dạng': 'Trắc nghiệm',
+        'Mức độ': 'Nhận biết',
+        'Nội dung': '<p>Câu hỏi trắc nghiệm mẫu...</p>',
+        'Đáp án': 'A. Giải thích đáp án'
+      },
+      {
+        'Môn học': 'Ngữ văn',
+        'Khối lớp': 'Lớp 12',
+        'Bài học': 'Vợ chồng A Phủ',
+        'Dạng': 'Tự luận',
+        'Mức độ': 'Vận dụng',
+        'Nội dung': '<p>Câu hỏi tự luận mẫu...</p>',
+        'Đáp án': 'Dàn ý trả lời chi tiết'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "Mau_Nhap_Cau_Hoi.xlsx");
   };
 
   const handleSaveBatch = async () => {
@@ -382,13 +454,29 @@ export default function QuestionBankModal({
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nội dung câu hỏi (Hỗ trợ HTML) *</label>
-                <textarea className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[150px]" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} placeholder="Nhập nội dung câu hỏi..." />
+                <label className="block text-sm font-medium text-slate-700 mb-2">Nội dung câu hỏi (Hình ảnh & Văn bản) *</label>
+                <div className="bg-white rounded-lg">
+                  <ReactQuill 
+                    theme="snow" 
+                    value={formData.content} 
+                    onChange={val => setFormData({...formData, content: val})}
+                    placeholder="Nhập nội dung câu hỏi..."
+                    className="h-40 mb-12"
+                  />
+                </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Đáp án / Hướng dẫn giải (Hỗ trợ HTML)</label>
-                <textarea className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px]" value={formData.answer} onChange={e => setFormData({...formData, answer: e.target.value})} placeholder="Nhập đáp án..." />
+              <div className="mb-6 pt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Đáp án / Hướng dẫn giải</label>
+                <div className="bg-white rounded-lg">
+                  <ReactQuill 
+                    theme="snow" 
+                    value={formData.answer} 
+                    onChange={val => setFormData({...formData, answer: val})}
+                    placeholder="Nhập đáp án hoặc hướng dẫn chấm..."
+                    className="h-32 mb-12"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3">
@@ -559,8 +647,17 @@ export default function QuestionBankModal({
                       onClick={() => batchFileInputRef.current?.click()} 
                       isLoading={isExtracting}
                       icon={isExtracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
+                      title="Hỗ trợ PDF, Word, Ảnh hoặc Excel"
                     >
-                      Quét từ file/ảnh
+                      Nhập từ File
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={downloadTemplate} 
+                      icon={<Download className="w-4 h-4" />}
+                      title="Tải file mẫu Excel"
+                    >
+                      Mẫu Excel
                     </Button>
                     <Button onClick={() => setIsAdding(true)} icon={<Plus className="w-4 h-4" />}>Thêm câu hỏi</Button>
                   </>

@@ -1,13 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, query, collection, onSnapshot, where, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, query, collection, onSnapshot, where, getDocFromServer, initializeFirestore } from 'firebase/firestore';
 import firebaseConfig from './firebase-applet-config.json';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// Use a specific databaseId if provided, otherwise default to '(default)'
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+
+// Use initializeFirestore with long polling to fix "offline" issues in some environments
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)') 
+   ? firebaseConfig.firestoreDatabaseId 
+   : undefined);
+
 export const googleProvider = new GoogleAuthProvider();
 
 // Error Handling

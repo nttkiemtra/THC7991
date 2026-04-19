@@ -1250,7 +1250,10 @@ const App: React.FC = () => {
                       onClick={() => {
                         signInWithPopup(auth, googleProvider).catch(err => {
                           console.error("Auth Error:", err);
-                          alert(`Lỗi đăng nhập: ${err.message}\n\nMẹo: Hãy kiểm tra xem bạn đã thêm tên miền này vào 'Authorized domains' trong Firebase Console chưa.`);
+                          const currentHostname = window.location.hostname;
+                          alert(`Lỗi đăng nhập: ${err.message}\n\n` + 
+                                `Tên miền hiện tại: ${currentHostname}\n\n` +
+                                `MẸO: Hãy vào Firebase Console -> Authentication -> Settings -> Authorized domains và đảm bảo đã THÊM CHÍNH XÁC tên miền '${currentHostname}' vào danh sách.`);
                         });
                       }} 
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95"
