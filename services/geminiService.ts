@@ -802,23 +802,24 @@ export const generateStep3Exam = async (
 
   **YÊU CẦU HÌNH THỨC & NỘI DUNG:**
 
-  **1. HEADER ĐỀ THI:**
-  - Kẻ bảng không viền (class="header-table" width="100%"):
-    + Cột Trái (40%): TRƯỜNG THCS ........................<br>Lớp: ........................<br>Họ và tên: ........................
-    + Cột Phải (60%): **BÀI KIỂM TRA ........................**<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
-  - **KHUNG ĐIỂM & NHẬN XÉT (BẮT BUỘC):**
-    Ngay dưới Header, kẻ bảng (border="1" width="100%"):
-    + Cột 1 (30% width, cao 80px): **Điểm**
-    + Cột 2 (70% width, cao 80px): **Lời nhận xét của thầy (cô) giáo:** (Để trống)
+  **1. HEADER ĐỀ THI (CHUẨN THCS NGUYỄN TRƯỜNG TỘ):**
+  - Sử dụng bảng ẩn viền (.header-table) để chia 2 cột:
+    + Cột Trái: **TRƯỜNG THCS NGUYỄN TRƯỜNG TỘ** (In hoa, đậm).
+    + Cột Phải: **BÀI KIỂM TRA HK ..., NH 20... - 20...** (In hoa, đậm)<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
+  - Ngay bên dưới thiết kế thêm Bảng ẩn viền chứa các thông tin: Họ và tên: ............., Lớp: .............
+  - **KHUNG ĐIỂM & LỜI PHÊ (BẮT BUỘC):**
+    Ngay dưới khối thông tin, kẻ bảng (border="1" width="100%"):
+    + Cột 1 (30%): **Điểm** (Để trống phần dưới)
+    + Cột 2 (70%): **Lời phê của thầy (cô) giáo:** (Để trống không gian viết)
   - Tiêu đề giữa: **ĐỀ BÀI**
 
-  **2. PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN:**
-  - **BẮT BUỘC:** Ngay dưới tiêu đề Phần I, tạo **KHUNG TRẢ LỜI CHO HỌC SINH**:
-    (Kẻ bảng 2 dòng. Dòng 1: Câu 1, 2, ... [số lượng câu]. Dòng 2: Để trống "Đáp án").
-  - Sau đó mới đến danh sách câu hỏi.
+  **2. PHẦN I. TRẮC NGHIỆM (3.0 điểm):**
+  - **BẮT BUỘC:** Ngay dưới tiêu đề Phần I, tạo **KHUNG ĐÁP ÁN CHO HỌC SINH**:
+    (Kẻ bảng 13 cột, 2 dòng. Dòng 1 có cột đầu là "Câu", sau đó là "1", "2"..."12". Dòng 2 có cột đầu là "Đáp án", các cột sau để trống).
+  - Sau đó đến danh sách 12 câu hỏi trắc nghiệm.
   - **ĐỊNH DẠNG CÂU HỎI (QUAN TRỌNG):**
-    **Câu X.** (Mức độ - Bài Y) [Nội dung câu hỏi]?
-    (BẮT BUỘC: Bọc toàn bộ Câu X và nội dung câu hỏi trong <div class="question-text">. Phần "Câu X." phải được in đậm bằng thẻ <b>)
+    **Câu [Số]:** (Mức độ - Bài Y) [Nội dung câu hỏi]?
+    (BẮT BUỘC: Bọc toàn bộ Câu [Số]: và nội dung câu hỏi trong <div class="question-text">. Phần "Câu X:" phải được in đậm bằng thẻ <b>)
     
     **ĐỊNH DẠNG ĐÁP ÁN (Dạng I - Trắc nghiệm):**
     - Bọc 4 phương án (A, B, C, D) trong một <div class="options-container">.
@@ -840,19 +841,20 @@ export const generateStep3Exam = async (
 
   **3. PHẦN II. ĐÚNG/SAI:**
   - Tiêu đề: PHẦN II. ĐÚNG/SAI...
-  - Với mỗi câu hỏi (VD: Câu 13):
+  - Với mỗi câu hỏi:
     + Viết lời dẫn (Scenario).
-    + Kẻ **BẢNG 3 CỘT** (bắt buộc): | Lệnh hỏi | Đ | S |
+    + Kẻ **BẢNG 3 CỘT** (bắt buộc): | Phát biểu | Đúng | Sai |
     + Các dòng: a), b), c), d) [Nội dung mệnh đề] | | |
 
   **4. PHẦN III. GHÉP NỐI:**
   - Tiêu đề: PHẦN III. GHÉP NỐI...
-  - Kẻ **BẢNG 3 CỘT**: | Cột A | Cột B | Ghép nối |
-    + Nội dung cột A | Nội dung cột B | 1 - ... |
-    + ... | ... | 2 - ... |
+  - Kẻ **BẢNG 3 CỘT**: | Cột A | Cột trống | Cột B |
+    + Nội dung cột A | (Để trống học sinh điền) | Nội dung cột B |
+    + ... | ... | ... |
 
-  **5. PHẦN IV (Điền khuyết) & V (Tự luận):** 
-  - Trình bày như văn bản thông thường.
+  **5. PHẦN V: TỰ LUẬN (3.0 điểm):** 
+  - Liệt kê các câu hỏi kèm theo số điểm tương ứng trong ngoặc đơn ở đầu câu (VD: **Câu 15 (1.0 điểm):**).
+  - Kết thúc đề thi (bên dưới phần Tự luận), BẮT BUỘC phải chèn một dải giấy trống hoặc khoảng trống lớn với tiêu đề chữ in đậm giữa trang: **BÀI LÀM** để học sinh tự làm tự luận vào khoảng trống đó.
 
   **6. HƯỚNG DẪN CHẤM VÀ THANG ĐIỂM (Cuối tài liệu):**
   - Tiêu đề: HƯỚNG DẪN CHẤM VÀ THANG ĐIỂM.
