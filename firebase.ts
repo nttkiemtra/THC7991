@@ -51,8 +51,10 @@ export function handleFirestoreError(
   path: string | null,
 ) {
   const user = auth.currentUser;
+  const errorMsg = error instanceof Error ? error.message : String(error);
+  
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMsg,
     authInfo: {
       userId: user?.uid,
       email: user?.email,
@@ -71,7 +73,16 @@ export function handleFirestoreError(
     path,
   };
   console.error("Firestore Error: ", JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  
+  // Custom event for global toast if needed
+  if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('firestore-error', { 
+        detail: { message: errorMsg, operationType } 
+      }));
+  }
+
+  // Do NOT throw. Throwing causes React ErrorBoundary to trigger and shows a white screen of death.
+  return errInfo;
 }
 
 // Firestore Status State

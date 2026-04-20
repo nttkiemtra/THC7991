@@ -865,24 +865,33 @@ export const generateStep3Exam = async (
     - Tổng điểm phần này là 3.0 điểm.
   
   **7. ĐỊNH DẠNG CÂU HỎI CÓ BẢNG:**
-  - Với bất kỳ câu hỏi nào có chứa bảng dữ liệu, bảng đó phải được kẻ khung rõ ràng (Table Grid). Tuyệt đối không để ẩn viền.
+  - Với bất kỳ câu hỏi nào có chứa bảng dữ liệu, bảng đó phải được kẻ khung rõ ràng (Table Grid). Tất cả bảng dùng đường kẻ đơn (Single line) với CSS: border-collapse: collapse; border: 1pt solid black;.
+  - Loại bỏ khoảng cách đệm dư thừa: padding: 2pt;. Tuyệt đối không để ẩn viền.
+
+  **8. KHỐI LỆNH SCRATCH (NẾU CÓ):**
+  - KHÔNG sử dụng thuộc tính border-radius hay Flexbox vì Word sẽ làm mất định dạng.
+  - Sử dụng cấu trúc Bảng HTML lồng nhau (Nested Tables). Mỗi khối lệnh là một bảng có màu nền (bgcolor) tương ứng với màu chuẩn của Scratch (VD: xanh dương cho Motion, vàng cho Events). Giữ nguyên cấu trúc khối.
+
+  **9. BỐ CỤC ĐÁP ÁN (A, B, C, D):**
+  - Tuyệt đối KHÔNG dùng \`display: flex\` để chia đáp án vì Word sẽ xếp chồng chúng thành 4 dòng.
+  - BẮT BUỘC sử dụng Bảng ẩn (border: none) để chia cột đáp án tùy theo độ dài:
+    + TH1: 4 đáp án ngắn -> Bảng 1 hàng, 4 cột (mỗi cột 25%).
+    + TH2: Đáp án dài vừa phải -> Bảng 2 hàng, 2 cột (mỗi cột 50%).
+    + TH3: Đáp án rất dài -> Bảng 4 hàng, 1 cột (mỗi cột 100%).
+  - Mỗi ô đáp án phải có định dạng: text-align: left; vertical-align: top;. Thiết lập border: none; cho bảng chia đáp án.
 
   **YÊU CẦU OUTPUT:**
-  1. Chỉ xuất ra Full HTML Document (<!DOCTYPE html>...). 
-  2. Font Times New Roman, size 14pt, line-height 1.0.
+  1. Chỉ xuất ra nội dung HTML (không bao gồm thẻ <html> hay <head> vì hệ thống sẽ tự động ghép).
+  2. Font chữ: Times New Roman, cỡ 14pt (cho nội dung chính), 13pt (cho các bảng phụ nếu cần chật).
   3. KHÔNG trả về markdown.
-  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ):
-     - body, p { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; padding: 0; }
+  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ CHO IN ẤN/WORD):
+     - body, p, div { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; padding: 0; }
      - .header-table td, .header-table p { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
-     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 5px 0; }
-     - table { width: 100%; border-collapse: collapse; margin-bottom: 0pt; border: 1px solid black; margin-left: auto; margin-right: auto; }
-     - td, th { border: 1px solid black; padding: 4px; vertical-align: top; text-align: center; }
+     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 0pt; }
+     - table { width: 100%; border-collapse: collapse; border: 1pt solid black; margin: 0pt; }
+     - td, th { border: 1pt solid black; padding: 2pt; vertical-align: top; text-align: center; }
+     - table.options-table, table.options-table td { border: none !important; padding: 2pt; }
      - .question-text { text-align: justify; margin-bottom: 5px; display: block; }
-     - .options-container { display: flex; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 10px; }
-     - .option { flex: 0 0 auto; min-width: fit-content; padding-right: 10px; white-space: nowrap; box-sizing: border-box; }
-     - .option.w-1-4 { width: 25%; }
-     - .option.w-1-2 { width: 50%; }
-     - .option.w-full { width: 100%; }
      - .question-content { text-align: justify; }
   `;
 

@@ -41,36 +41,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    match /users/{userId}/{document=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Rules for user-owned subcollections (exams, questions, profile)
-    // Matches any document under users/{userId}/...
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Admin override: Full access for the developer/administrator
     match /{document=**} {
-      allow read, write: if isSignedIn() && 
-        request.auth.token.email == "nttkiemtra@gmail.com" && 
-        request.auth.token.email_verified == true;
-    }
-    
-    // Default deny for everything else not explicitly covered above
-    // (Though the admin check above acts as a broad allow for one user)
-    match /admins/{adminId} {
-      allow read: if isSignedIn() && (
-        request.auth.token.email == "nttkiemtra@gmail.com" && 
-        request.auth.token.email_verified == true
+      allow read, write: if isSignedIn() && (
+        request.auth.uid == "O1fQnvAlVBNO3p2FziNRLh5YTVN2" ||
+        request.auth.token.email == "nttkiemtra@gmail.com"
       );
-      allow write: if false;
     }
   }
 }
+

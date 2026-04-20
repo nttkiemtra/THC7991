@@ -365,9 +365,22 @@ const App: React.FC = () => {
 
   // Background error scanner
   useEffect(() => {
+    
+    // Add Firestore global error listener
+    const handleFirestoreErrorEvent = (event: any) => {
+      const { message } = event.detail || {};
+      if (message && message.includes("Missing or insufficient permissions")) {
+         console.warn("Firestore permission issue detected (soft error).");
+      } else {
+         alert(`Cảnh báo kết nối Database: ${message}`);
+      }
+    };
+    window.addEventListener('firestore-error', handleFirestoreErrorEvent);
+
+    let timeoutId: any;
     if (currentStep === AppStep.EXAM && (genState.exam || isEditing)) {
       const content = isEditing ? editValue : genState.exam;
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         const errors: ExamError[] = [];
 
         // 1. Check Total Score
@@ -428,10 +441,14 @@ const App: React.FC = () => {
 
         setErrorReport(errors);
       }, 1000); // Debounce scan
-      return () => clearTimeout(timeoutId);
     } else {
       setErrorReport([]);
     }
+
+    return () => {
+      window.removeEventListener('firestore-error', handleFirestoreErrorEvent);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [
     currentStep,
     genState.exam,
@@ -1315,7 +1332,7 @@ const App: React.FC = () => {
                       letter-spacing: 0pt;
                       mso-font-kerning: 0pt;
                   }
-                  p {
+                  p, div {
                       margin-top: 0pt;
                       margin-bottom: 0pt;
                       text-align: justify;
@@ -1334,10 +1351,15 @@ const App: React.FC = () => {
                       margin-right: auto;
                   }
                   td, th { 
-                      padding: 4px; 
+                      padding: 2pt; 
                       vertical-align: top; 
                       mso-border-alt: 0.5pt solid black;
-                      text-align: center;
+                      text-align: left;
+                  }
+                  table.options-table, table.options-table td {
+                      border: none !important;
+                      padding: 2pt;
+                      mso-border-alt: none;
                   }
                   .header-table, .header-table td, .header-table th, .header-table p { 
                       border: none !important; 
@@ -3128,7 +3150,7 @@ const App: React.FC = () => {
                                                     outline: none;
                                                     text-align: justify;
                                                 }
-                                                .print-editor-content p {
+                                                .print-editor-content p, .print-editor-content div {
                                                     margin-top: 0pt;
                                                     margin-bottom: 0pt;
                                                     line-height: 1.0;
@@ -3144,9 +3166,13 @@ const App: React.FC = () => {
                                                     margin: 0pt; 
                                                 }
                                                 .print-editor-content td, .print-editor-content th { 
-                                                    padding: 4px; 
+                                                    padding: 2px; 
                                                     vertical-align: top; 
-                                                    text-align: center;
+                                                    text-align: left;
+                                                }
+                                                .print-editor-content table.options-table, .print-editor-content table.options-table td {
+                                                    border: none !important;
+                                                    padding: 2px;
                                                 }
                                                 .print-editor-content .header-table, .print-editor-content .header-table td, .print-editor-content .header-table p { 
                                                     border: none !important; 
