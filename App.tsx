@@ -2786,7 +2786,7 @@ const App: React.FC = () => {
         {/* STEP 2, 3, 4: PREVIEW & ACTIONS */}
         {currentStep !== AppStep.INPUT && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-200px)]">
-            <div className="lg:col-span-8 h-full flex flex-col">
+            <div className="lg:col-span-9 h-full flex flex-col">
               <div className="bg-white rounded-t-xl border border-slate-200 border-b-0 p-4 flex items-center justify-between">
                 <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                   {currentStep === AppStep.MATRIX
@@ -3269,7 +3269,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Right Column: Actions (Sidebar) */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
+            <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-y-auto pr-1 pb-4">
               <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                 <h3 className="font-bold text-slate-800 mb-4">Thao tác</h3>
                 <div className="space-y-3">
@@ -3423,24 +3423,23 @@ const App: React.FC = () => {
                           Lưu vào kho cá nhân
                         </Button>
                         <Button
-                          className="w-full bg-slate-800 hover:bg-slate-900 shadow-md py-2.5"
+                          className="w-full bg-slate-800 hover:bg-slate-900 shadow-md py-2.5 transition-colors"
                           onClick={handleDownloadAll}
                           isLoading={genState.isLoading}
-                          icon={<Archive className="w-4 h-4" />}
+                          icon={<Archive className="w-4 h-4 text-slate-300" />}
                         >
                           Tải toàn bộ (Zip)
                         </Button>
                       </div>
 
                       {/* Section 3: Word Export */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
                           Xuất Word (.docx)
                         </p>
-                        <div className="grid grid-cols-1 gap-2">
-                          <Button
-                            variant="outline"
-                            className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 justify-start h-auto py-3 px-4"
+                        <div className="flex flex-col gap-2">
+                          <button
+                            className="w-full group flex items-center gap-3 p-3 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-xl transition-all shadow-sm text-left"
                             onClick={() =>
                               handleExportWord(
                                 genState.exam || editValue,
@@ -3448,23 +3447,23 @@ const App: React.FC = () => {
                                 "full",
                               )
                             }
-                            icon={
-                              <FileText className="w-5 h-5 flex-shrink-0" />
-                            }
                           >
-                            <div className="text-left">
-                              <div className="font-bold text-sm">
-                                Đề thi đầy đủ
-                              </div>
-                              <div className="text-[10px] opacity-70">
-                                Bao gồm cả Đề và Đáp án
-                              </div>
+                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                              <FileText className="w-5 h-5 flex-shrink-0" />
                             </div>
-                          </Button>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-sm text-slate-800 group-hover:text-blue-700 truncate">
+                                  Đề thi đầy đủ
+                                </h4>
+                                <p className="text-[11px] text-slate-500 truncate">
+                                  Bao gồm cả Đề và Đáp án
+                                </p>
+                            </div>
+                          </button>
+
+                          <div className="flex gap-2">
+                            <button
+                              className="w-full flex-1 group flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-lg transition-all shadow-sm"
                               onClick={() =>
                                 handleExportWord(
                                   genState.exam || editValue,
@@ -3472,26 +3471,23 @@ const App: React.FC = () => {
                                   "exam",
                                 )
                               }
-                              icon={
-                                <FileSignature className="w-3 h-3 flex-shrink-0" />
-                              }
                             >
-                              Chỉ Đề thi
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
-                              onClick={() =>
-                                handleExportWord(
-                                  genState.exam || editValue,
-                                  "Dap_An_Only",
-                                  "key",
-                                )
-                              }
-                              icon={<Split className="w-3 h-3 flex-shrink-0" />}
+                                <FileSignature className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
+                                <span className="text-[11px] font-medium text-slate-700 group-hover:text-blue-700 truncate">Chỉ Đề thi</span>
+                            </button>
+                            <button
+                               className="w-full flex-1 group flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-lg transition-all shadow-sm"
+                               onClick={() =>
+                                 handleExportWord(
+                                   genState.exam || editValue,
+                                   "Dap_An_Only",
+                                   "key",
+                                 )
+                               }
                             >
-                              Chỉ Đáp án
-                            </Button>
+                                <Split className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
+                                <span className="text-[11px] font-medium text-slate-700 group-hover:text-blue-700 truncate">Chỉ Đáp án</span>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -3642,28 +3638,41 @@ const App: React.FC = () => {
 
                       {/* Section 6: Error Report */}
                       {errorReport.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100">
-                          <div className="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
-                            <p className="text-[10px] font-bold text-red-800 uppercase tracking-widest mb-2 flex items-center gap-1">
-                              <AlertCircle className="w-3.5 h-3.5" /> Quét lỗi
+                        <div className="pt-3 border-t border-slate-100">
+                          <div className="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
+                            <p className="text-[11px] font-bold text-red-800 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                              <AlertCircle className="w-4 h-4 text-red-500" /> Quét lỗi
                               tự động ({errorReport.length})
                             </p>
-                            <div className="space-y-3 max-h-[150px] overflow-y-auto pr-1">
+                            <ul className="space-y-3 max-h-[160px] overflow-y-auto pr-2 list-disc pl-4 marker:text-red-400 text-red-700">
                               {errorReport.map((err) => (
-                                <div
+                                <li
                                   key={err.id}
-                                  className="text-[11px] border-l-2 border-red-300 pl-3"
+                                  className="text-[12px]"
                                 >
-                                  <div className="font-bold text-red-700 flex items-start gap-1">
+                                  <div className="font-semibold leading-tight mb-1">
                                     {err.message}
                                   </div>
                                   {err.suggestedFix && (
-                                    <div className="text-slate-600 mt-0.5 italic text-[10px]">
+                                    <div className="text-red-800/80 italic text-[11px] leading-snug">
                                       💡 {err.suggestedFix}
                                     </div>
                                   )}
-                                </div>
+                                </li>
                               ))}
+                            </ul>
+                            <div className="mt-4 border-t border-red-200/50 pt-3">
+                              <Button
+                                variant="outline"
+                                className="w-full bg-white text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300 py-2"
+                                onClick={() => {
+                                  setIsEditing(true);
+                                }}
+                                icon={<Pencil className="w-3.5 h-3.5" />}
+                              >
+                                Sửa nhanh bằng tay
+                              </Button>
                             </div>
                           </div>
                         </div>
