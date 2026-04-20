@@ -30,31 +30,41 @@ const MarkdownView: React.FC<Props> = ({ content, config }) => {
                 .doc-preview-container {
                     font-family: ${config?.fontFamily || "'Times New Roman', serif"};
                     font-size: ${config?.fontSize || '13pt'};
-                    line-height: ${config?.lineHeight || '1.3'};
+                    line-height: ${config?.lineHeight || '1.0'};
                     color: ${config?.primaryColor || '#000'};
                 }
                 
                 /* Standard Table Styling */
+                .doc-preview-container table, 
+                .doc-preview-container table th, 
+                .doc-preview-container table td { 
+                    border: 1px solid black; 
+                }
+                
                 .doc-preview-container table { 
                     border-collapse: collapse; 
                     width: 100%; 
-                    margin-bottom: 1rem; 
+                    margin: 0pt; 
+                    margin-left: auto;
+                    margin-right: auto;
                 }
                 
                 /* Enforce borders for standard tables (Matrix, Specs, Answer Key) */
                 .doc-preview-container table th, 
                 .doc-preview-container table td { 
-                    border: 1px solid black; 
-                    padding: 5px; 
+                    padding: 4px; 
                     vertical-align: top;
+                    text-align: center;
                 }
 
-                /* EXCEPTION: Header Table (Exam Step) must NOT have borders */
+                /* EXCEPTION: Header Table (Exam Step) must NOT have borders and should be left-aligned */
                 .doc-preview-container table.header-table,
                 .doc-preview-container table.header-table td,
-                .doc-preview-container table.header-table th {
+                .doc-preview-container table.header-table th,
+                .doc-preview-container table.header-table p {
                     border: none !important;
                     vertical-align: top;
+                    text-align: left !important;
                 }
 
                 /* Header Text Styling */
@@ -66,7 +76,39 @@ const MarkdownView: React.FC<Props> = ({ content, config }) => {
                     text-transform: uppercase; 
                 }
                 
-                .doc-preview-container p { margin-bottom: 5px; }
+                .doc-preview-container p { 
+                    margin-top: 0pt;
+                    margin-bottom: 0pt;
+                    text-align: justify;
+                    line-height: 1.0;
+                    padding: 0;
+                }
+
+                .doc-preview-container .question-text {
+                    text-align: justify;
+                    margin-bottom: 10px;
+                    display: block;
+                }
+
+                .doc-preview-container .options-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: flex-start;
+                    margin-bottom: 15px;
+                    gap: 8px; /* Slight gap for clarity */
+                }
+
+                .doc-preview-container .option {
+                    flex: 0 0 auto;
+                    min-width: fit-content;
+                    padding-right: 15px;
+                    white-space: nowrap;
+                    box-sizing: border-box;
+                }
+
+                .doc-preview-container .option.w-1-4 { width: 25%; }
+                .doc-preview-container .option.w-1-2 { width: 50%; }
+                .doc-preview-container .option.w-full { width: 100%; flex: 1 1 100%; }
             `}</style>
             <div 
                 className="doc-preview-container overflow-x-auto p-8 shadow-sm border border-slate-100" 

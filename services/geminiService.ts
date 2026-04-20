@@ -399,7 +399,7 @@ export const generateStep1Matrix = async (
      Phải tính toán và hiển thị chính xác các số liệu sau ở cuối bảng (trong thẻ tfoot hoặc row cuối):
      - **Tỉ lệ % điểm:** Biết ...% - Hiểu ...% - Vận dụng 30%.
      - **Tổng điểm:** Trắc nghiệm 7.0 - Tự luận 3.0.
-  5. KHÔNG trả về markdown fences. Border 1px solid black.
+  5. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%;">.
   `;
 
   try {
@@ -510,7 +510,7 @@ export const generateStep2Specs = async (
      - Điền CHÍNH XÁC mã câu hỏi (C1, C2...) lấy từ Ma trận sang.
   5. **FOOTER (TỔNG KẾT):**
      Hiển thị tổng số câu và phân phối điểm số (Trắc nghiệm 7.0 - Tự luận 3.0).
-  6. KHÔNG trả về markdown fences. Border 1px solid black.
+  6. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%;">.
   `;
 
   try {
@@ -793,7 +793,12 @@ export const generateStep3Exam = async (
 
   **YÊU CẦU ĐỊNH DẠNG BẢNG (TABLE GRID):**
   - Tất cả các bảng trong đề (Bảng Ma trận, Bảng Đặc tả, Bảng trong nội dung câu hỏi) **BẮT BUỘC** sử dụng định dạng **Table Grid** (đường kẻ đơn, liền mạch, màu đen).
-  - Sử dụng CSS: border: 1px solid black; border-collapse: collapse;
+  - Sử dụng thẻ <table border="1" style="border-collapse: collapse; width: 100%;"> và CSS: border: 1px solid black; border-collapse: collapse;
+
+  **YÊU CẦU CĂN LỀ & GIÃN DÒNG:**
+  - Định dạng nội dung từ Phần I trở đi BẮT BUỘC phải được **Căn đều hai bên (Justify)**. 
+  - Đảm bảo không bị lỗi giãn cách chữ (khoảng cách giữa các từ phải tự nhiên).
+  - Khoảng cách giữa các dòng (line-height) là 1.0 (Single spacing).
 
   **YÊU CẦU HÌNH THỨC & NỘI DUNG:**
 
@@ -812,14 +817,25 @@ export const generateStep3Exam = async (
     (Kẻ bảng 2 dòng. Dòng 1: Câu 1, 2, ... [số lượng câu]. Dòng 2: Để trống "Đáp án").
   - Sau đó mới đến danh sách câu hỏi.
   - **ĐỊNH DẠNG CÂU HỎI (QUAN TRỌNG):**
-    Câu X. (Mức độ - Bài Y) [Nội dung câu hỏi]?
-    A. ...
-    B. ...
-    C. ...
-    D. ...
-    (Mỗi đáp án trắc nghiệm nằm trên 1 dòng riêng biệt)
+    **Câu X.** (Mức độ - Bài Y) [Nội dung câu hỏi]?
+    (BẮT BUỘC: Bọc toàn bộ Câu X và nội dung câu hỏi trong <div class="question-text">. Phần "Câu X." phải được in đậm bằng thẻ <b>)
     
-    *Ví dụ: Câu 1. (NB - Bài 10) Thiết bị nào sau đây là thiết bị vào?*
+    **ĐỊNH DẠNG ĐÁP ÁN (Dạng I - Trắc nghiệm):**
+    - Bọc 4 phương án (A, B, C, D) trong một <div class="options-container">.
+    - **TỰ ĐỘNG TÍNH TOÁN SỐ DÒNG (BẮT BUỘC):**
+      + Đo độ dài (số ký tự) của đáp án dài nhất trong 4 đáp án.
+      + Nếu độ dài < 15 ký tự: Sử dụng thẻ <div class="option w-1-4"> (Dàn 4 đáp án trên 1 dòng).
+      + Nếu độ dài từ 15 đến 35 ký tự: Sử dụng thẻ <div class="option w-1-2"> (Dàn 2 đáp án trên 1 dòng).
+      + Nếu độ dài > 35 ký tự: Sử dụng thẻ <div class="option w-full"> (Mỗi đáp án 1 dòng - 4 dòng).
+    
+    *(Ví dụ: <div class="question-text"><b>Câu 1.</b> (NB) Thiết bị nào là thiết bị vào?</div>
+    <div class="options-container">
+      <div class="option w-1-4">A. Chuột.</div>
+      <div class="option w-1-4">B. Loa.</div>
+      <div class="option w-1-4">C. Màn hình.</div>
+      <div class="option w-1-4">D. Máy in.</div>
+    </div>)*
+    
     *(Chú thích Mức độ: NB=Biết, TH=Hiểu, VD=Vận dụng, VDC=Vận dụng cao)*
 
   **3. PHẦN II. ĐÚNG/SAI:**
@@ -855,11 +871,19 @@ export const generateStep3Exam = async (
   1. Chỉ xuất ra Full HTML Document (<!DOCTYPE html>...). 
   2. Font Times New Roman, size 14pt, line-height 1.0.
   3. KHÔNG trả về markdown.
-  4. CSS quan trọng:
-     - body, p { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; }
-     - .header-table td { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
-     - table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid black; }
-     - td, th { border: 1px solid black; padding: 5px; vertical-align: top; }
+  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ):
+     - body, p { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; padding: 0; }
+     - .header-table td, .header-table p { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
+     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 5px 0; }
+     - table { width: 100%; border-collapse: collapse; margin-bottom: 0pt; border: 1px solid black; margin-left: auto; margin-right: auto; }
+     - td, th { border: 1px solid black; padding: 4px; vertical-align: top; text-align: center; }
+     - .question-text { text-align: justify; margin-bottom: 5px; display: block; }
+     - .options-container { display: flex; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 10px; }
+     - .option { flex: 0 0 auto; min-width: fit-content; padding-right: 10px; white-space: nowrap; box-sizing: border-box; }
+     - .option.w-1-4 { width: 25%; }
+     - .option.w-1-2 { width: 50%; }
+     - .option.w-full { width: 100%; }
+     - .question-content { text-align: justify; }
   `;
 
   try {

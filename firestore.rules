@@ -37,103 +37,40 @@
 //
 // ===============================================================
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    
-    function isAuthenticated() {
+    // Helper functions
+    function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/data).data.role == 'admin' ||
-          (request.auth.token.email == "nttkiemtra@gmail.com" && request.auth.token.email_verified == true));
+    // Rules for user-owned subcollections (exams, questions, profile)
+    // Matches any document under users/{userId}/...
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isOwner(userId);
     }
 
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
-
-    function isValidUserProfile(data) {
-      return data.uid == request.auth.uid &&
-             isValidEmail(data.email) &&
-             data.createdAt is string;
-    }
-
-    function isValidExam(data) {
-      return data.uid == request.auth.uid &&
-             data.id is string &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
-             data.subject is string &&
-             data.grade is string &&
-             data.matrix is string &&
-             data.specs is string &&
-             data.exam is string &&
-             data.createdAt is string;
-    }
-
-    function isValidQuestion(data) {
-      return data.uid == request.auth.uid &&
-             data.id is string &&
-             data.subject is string &&
-             data.grade is string &&
-             data.type in ['type1', 'type2', 'type3', 'type4', 'essay'] &&
-             data.level in ['biet', 'hieu', 'van_dung', 'van_dung_cao'] &&
-             data.content is string && data.content.size() > 0 &&
-             data.createdAt is string;
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
-
-    match /users/{userId} {
-      match /profile/data {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && 
-                      request.resource.data.uid == request.auth.uid &&
-                      isValidEmail(request.resource.data.email);
-        allow update: if isOwner(userId) && 
-                      request.resource.data.uid == resource.data.uid;
-        allow delete: if isAdmin();
-      }
-
-      match /exams/{examId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && isValidExam(request.resource.data);
-        allow update: if isOwner(userId) && isValidExam(request.resource.data) &&
-                      request.resource.data.uid == resource.data.uid &&
-                      request.resource.data.id == resource.data.id &&
-                      request.resource.data.createdAt == resource.data.createdAt;
-        allow delete: if isOwner(userId) || isAdmin();
-      }
-
-      match /questions/{questionId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && isValidQuestion(request.resource.data);
-        allow update: if isOwner(userId) && isValidQuestion(request.resource.data) &&
-                      request.resource.data.uid == resource.data.uid &&
-                      request.resource.data.id == resource.data.id &&
-                      request.resource.data.createdAt == resource.data.createdAt;
-        allow delete: if isOwner(userId) || isAdmin();
-      }
-    }
-
-    // Global Deny
+    // Admin override: Full access for the developer/administrator
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isSignedIn() && 
+        request.auth.token.email == "nttkiemtra@gmail.com" && 
+        request.auth.token.email_verified == true;
+    }
+    
+    // Default deny for everything else not explicitly covered above
+    // (Though the admin check above acts as a broad allow for one user)
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (
+        request.auth.token.email == "nttkiemtra@gmail.com" && 
+        request.auth.token.email_verified == true
+      );
+      allow write: if false;
     }
   }
 }
