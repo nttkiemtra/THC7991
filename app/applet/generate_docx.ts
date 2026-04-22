@@ -1,77 +1,42 @@
-// Tìm và cập nhật hàm createRun
-const createRun = (text: string, options: { bold?: boolean, italic?: boolean, underline?: boolean } = {}) => {
+// generate_docx.ts - Tối ưu hóa định dạng chuẩn sư phạm
+import { AlignmentType, WidthType, convertInchesToTwip, BorderStyle } from 'docx';
+
+// 1. Ép Font Times New Roman 14pt cho toàn bộ văn bản 
+const createRun = (text: string, options: any = {}) => {
     return new TextRun({
         text: text,
         font: 'Times New Roman',
-        size: 28, // 14pt
-        sizeComplexScript: 28, // Ép 14pt cho cả font hệ thống
+        size: 28, // 14pt = 28 half-points [cite: 7]
         bold: options.bold,
         italics: options.italic,
         underline: options.underline ? { type: "single" } : undefined
     });
 };
 
-// Tìm và cập nhật hàm createParagraph (Ép Justify triệt để)
-const createParagraph = (runs: any[], options: { alignment?: any, justify?: boolean, indentLeft?: number, spacingAfter?: number } = {}) => {
+// 2. Ép căn lề đều hai bên (Justify) cho mọi đoạn văn 
+const createParagraph = (runs: any[], options: any = {}) => {
     return new Paragraph({
         children: runs,
-        alignment: options.alignment || AlignmentType.JUSTIFY, // Mặc định luôn là JUSTIFY
-        indent: options.indentLeft ? { left: convertInchesToTwip(options.indentLeft) } : undefined,
+        alignment: options.alignment || AlignmentType.JUSTIFY, // Ép Justify 
         spacing: {
-            line: 240, // Single spacing
-            after: options.spacingAfter !== undefined ? options.spacingAfter : 0, // Giảm spacing dư thừa
+            line: 240, 
+            after: options.spacingAfter !== undefined ? options.spacingAfter : 120,
         }
     });
 };
 
-// TRONG HÀM generateWordDocx - CẬP NHẬT CÁC BẢNG:
-
-// 1. Cập nhật bảng Đúng/Sai (RULE 3)
-if (sec.type === 'true_false') {
-    const tfTable = new Table({
-        width: { size: 28, type: WidthType.PERCENTAGE },
-        rows: [
-            new TableRow({
-                children: [
-                    new TableCell({ 
-                        width: { size: 28, type: WidthType.PERCENTAGE }, // Ép 70%
-                        children: [createParagraph([createRun("Phát biểu", { bold: true })], { alignment: AlignmentType.JUSTIFY })] 
-                    }),
-                    new TableCell({ 
-                        width: { size: 28, type: WidthType.PERCENTAGE }, // Ép 15%
-                        children: [createParagraph([createRun("Đúng", { bold: true })], { alignment: AlignmentType.JUSTIFY })] 
-                    }),
-                    new TableCell({ 
-                        width: { size: 28, type: WidthType.PERCENTAGE }, // Ép 15%
-                        children: [createParagraph([createRun("Sai", { bold: true })], { alignment: AlignmentType.JUSTIFY })] 
-                    }),
-                ]
-            }),
-            ...statements.map((st: any, i: number) => (
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [createParagraph(parseTextToRuns(st.text), { justify: true })] }),
-                        new TableCell({ children: [createParagraph([createRun("")])] }),
-                        new TableCell({ children: [createParagraph([createRun("")])] }),
-                    ]
-                })
-            ))
-        ]
-    });
-    children.push(tfTable);
-}
-
-// 2. Ép lề chuẩn 2.0cm - 1.5cm (RULE 5)
+// 3. Cấu trúc lại lề trang chuẩn 2026 
+// Lề trái 2.0cm (1134 twips), Phải 1.5cm (850 twips) 
 const doc = new Document({
     sections: [{
         properties: {
             page: {
                 margin: {
-        top: 1134,
-        bottom: 1134,
-        left: 1134,
-        right: 850,
-    }
+                    top: 1134,    // 2.0cm
+                    bottom: 1134, // 2.0cm
+                    left: 1134,   // 2.0cm (Có thể chỉnh lên 1700 nếu cần đóng tập 3cm) 
+                    right: 850,    // 1.5cm 
+                }
             }
         },
         children: children
