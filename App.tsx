@@ -81,7 +81,6 @@ import {
   db,
   handleFirestoreError,
   OperationType,
-  onFirestoreStatusChange,
 } from "./firebase";
 import {
   signInWithPopup,
@@ -218,12 +217,6 @@ const App: React.FC = () => {
     "pre-select" | "insert" | null
   >(null);
   const [prefillQuestionContent, setPrefillQuestionContent] = useState("");
-  const [dbConnected, setDbConnected] = useState(true);
-
-  // Sync with Firestore connection status
-  useEffect(() => {
-    return onFirestoreStatusChange(setDbConnected);
-  }, []);
 
   // Firebase Auth Listener
   useEffect(() => {
@@ -339,7 +332,7 @@ const App: React.FC = () => {
     fontFamily: "'Times New Roman', serif",
     fontSize: "14pt",
     lineHeight: "1.2",
-    margins: { top: 2, bottom: 2, left: 2, right: 1.5 },
+    margins: { top: 2, bottom: 2, left: 3, right: 1.5 },
     primaryColor: "#000000",
     headerStyle: "standard",
   });
@@ -365,22 +358,9 @@ const App: React.FC = () => {
 
   // Background error scanner
   useEffect(() => {
-    
-    // Add Firestore global error listener
-    const handleFirestoreErrorEvent = (event: any) => {
-      const { message } = event.detail || {};
-      if (message && message.includes("Missing or insufficient permissions")) {
-         console.warn("Firestore permission issue detected (soft error).");
-      } else {
-         alert(`Cảnh báo kết nối Database: ${message}`);
-      }
-    };
-    window.addEventListener('firestore-error', handleFirestoreErrorEvent);
-
-    let timeoutId: any;
     if (currentStep === AppStep.EXAM && (genState.exam || isEditing)) {
       const content = isEditing ? editValue : genState.exam;
-      timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const errors: ExamError[] = [];
 
         // 1. Check Total Score
@@ -441,14 +421,10 @@ const App: React.FC = () => {
 
         setErrorReport(errors);
       }, 1000); // Debounce scan
+      return () => clearTimeout(timeoutId);
     } else {
       setErrorReport([]);
     }
-
-    return () => {
-      window.removeEventListener('firestore-error', handleFirestoreErrorEvent);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
   }, [
     currentStep,
     genState.exam,
@@ -1158,7 +1134,7 @@ const App: React.FC = () => {
     const rows = prompt("Nhập số hàng:", "3") || "3";
     const cols = prompt("Nhập số cột:", "3") || "3";
     let html =
-      '<table border="1" style="border-collapse: collapse; width: 100%; margin: 10px 0; border: 1px solid black;">';
+      '<table border="1" style="border-collapse: collapse; width: 100%; margin-bottom: 1rem; border: 1px solid black;">';
     for (let i = 0; i < parseInt(rows); i++) {
       html += "<tr>";
       for (let j = 0; j < parseInt(cols); j++) {
@@ -1320,7 +1296,7 @@ const App: React.FC = () => {
               <style>
                   @page WordSection1 {
                       size: ${orientation === "landscape" ? "29.7cm 21.0cm" : "21.0cm 29.7cm"}; /* A4 */
-                      margin: 2.0cm 1.5cm 2.0cm 2.0cm; /* top right bottom left */
+                      margin: 2.0cm 1.0cm 2.0cm 2.5cm; /* top right bottom left */
                       mso-page-orientation: ${orientation};
                   }
                   div.WordSection1 { page: WordSection1; }
@@ -1328,63 +1304,38 @@ const App: React.FC = () => {
                       font-family: 'Times New Roman', serif; 
                       font-size: 14pt; 
                       line-height: 1.0; 
-                      text-align: justify;
+                      text-align: center;
                       letter-spacing: 0pt;
                       mso-font-kerning: 0pt;
                   }
-                  p, div {
+                  p {
                       margin-top: 0pt;
-                      margin-bottom: 0pt;
-                      text-align: justify;
+                      margin-bottom: 6pt;
+                      text-align: center;
                       line-height: 1.0;
-                  }
-                  table, th, td {
-                      border: 1pt solid black;
                   }
                   table { 
                       border-collapse: collapse; 
                       width: 100%; 
-                      margin: 0pt; 
+                      margin-bottom: 1rem; 
+                      border: 1px solid black; 
                       mso-table-lspace: 0pt;
                       mso-table-rspace: 0pt;
                       margin-left: auto;
                       margin-right: auto;
                   }
                   td, th { 
-                      padding: 2pt; 
+                      border: 1px solid black; 
+                      padding: 5px; 
                       vertical-align: top; 
                       mso-border-alt: 0.5pt solid black;
-                      text-align: left;
-                  }
-                  table.options-table, table.options-table td {
-                      border: none !important;
-                      padding: 2pt;
-                      mso-border-alt: none;
+                      text-align: center;
                   }
                   .header-table, .header-table td, .header-table th, .header-table p { 
                       border: none !important; 
                       mso-border-alt: none !important; 
                       text-align: left !important;
                   }
-                  .question-text {
-                      text-align: justify;
-                      margin-bottom: 10px;
-                  }
-                  .options-container {
-                      display: flex;
-                      flex-wrap: wrap;
-                      justify-content: flex-start;
-                      margin-bottom: 15px;
-                  }
-                  .option {
-                      flex: 0 0 auto;
-                      min-width: 100pt;
-                      padding-right: 10px;
-                      box-sizing: border-box;
-                  }
-                  .option.w-1-4 { width: 25%; }
-                  .option.w-1-2 { width: 50%; }
-                  .option.w-full { width: 100%; flex: 1 1 100%; }
                   h3, h4 { text-align: center; margin: 10px 0; font-weight: bold; text-transform: uppercase; }
                   img { max-width: 100%; height: auto; }
               </style>
@@ -1605,28 +1556,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <AnimatePresence mode="wait">
-        {!dbConnected && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white py-2 px-4 shadow-lg flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <AlertCircle className="w-4 h-4" />
-              <span>
-                <b>LỖI KẾT NỐI:</b> Trình duyệt không thể kết nối với Cơ sở dữ
-                liệu Firestore. Hệ thống đang thử lại...
-              </span>
-            </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-xs underline bg-red-700 hover:bg-red-800 px-2 py-1 rounded transition-colors"
-            >
-              Tải lại trang
-            </button>
-          </motion.div>
-        )}
         {isAnalyzingFile && (
           <LoadingOverlay key="analyzing" message="Đang xử lý tài liệu..." />
         )}
@@ -1716,26 +1645,12 @@ const App: React.FC = () => {
                 onClick={() => {
                   signInWithPopup(auth, googleProvider).catch((err) => {
                     console.error("Auth Error:", err);
-                    if (err.code === 'auth/unauthorized-domain') {
-                      const currentHostname = window.location.hostname;
-                      const sharedHostname = currentHostname.replace('ais-dev-', 'ais-pre-');
-                      
-                      // Using a nicer modal or at least a very clear message
-                      alert(
-                        `⚠️ LỖI TÊN MIỀN CHƯA ĐƯỢC CẤP PHÉP (Unauthorized Domain)\n\n` +
-                        `Firebase từ chối đăng nhập vì tên miền này chưa có trong danh sách trắng.\n\n` +
-                        `CÁCH KHẮC PHỤC:\n` +
-                        `1. Truy cập: https://console.firebase.google.com\n` +
-                        `2. Chọn dự án của bạn.\n` +
-                        `3. Vào Build -> Authentication -> Settings -> Authorized domains.\n` +
-                        `4. Nhấp 'Add domain' và thêm 2 tên miền sau:\n` +
-                        `   - ${currentHostname}\n` +
-                        `   - ${sharedHostname}\n\n` +
-                        `Sau đó hãy thử đăng nhập lại!`
-                      );
-                    } else {
-                      alert(`Lỗi đăng nhập: ${err.message}`);
-                    }
+                    const currentHostname = window.location.hostname;
+                    alert(
+                      `Lỗi đăng nhập: ${err.message}\n\n` +
+                        `Tên miền hiện tại: ${currentHostname}\n\n` +
+                        `MẸO: Hãy vào Firebase Console -> Authentication -> Settings -> Authorized domains và đảm bảo đã THÊM CHÍNH XÁC tên miền '${currentHostname}' vào danh sách.`,
+                    );
                   });
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95"
@@ -2786,7 +2701,7 @@ const App: React.FC = () => {
         {/* STEP 2, 3, 4: PREVIEW & ACTIONS */}
         {currentStep !== AppStep.INPUT && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-200px)]">
-            <div className="lg:col-span-9 h-full flex flex-col">
+            <div className="lg:col-span-8 h-full flex flex-col">
               <div className="bg-white rounded-t-xl border border-slate-200 border-b-0 p-4 flex items-center justify-between">
                 <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                   {currentStep === AppStep.MATRIX
@@ -3145,61 +3060,21 @@ const App: React.FC = () => {
                                                 .print-editor-content {
                                                     font-family: 'Times New Roman', serif;
                                                     font-size: 13pt;
-                                                    line-height: 1.0;
+                                                    line-height: 1.3;
                                                     color: #000;
                                                     outline: none;
-                                                    text-align: justify;
-                                                }
-                                                .print-editor-content p, .print-editor-content div {
-                                                    margin-top: 0pt;
-                                                    margin-bottom: 0pt;
-                                                    line-height: 1.0;
-                                                    text-align: justify;
-                                                    padding: 0;
-                                                }
-                                                .print-editor-content table, .print-editor-content th, .print-editor-content td { 
-                                                    border: 1px solid black; 
                                                 }
                                                 .print-editor-content table { 
                                                     border-collapse: collapse; 
                                                     width: 100%; 
-                                                    margin: 0pt; 
+                                                    margin-bottom: 1rem; 
                                                 }
                                                 .print-editor-content td, .print-editor-content th { 
-                                                    padding: 2px; 
+                                                    border: 1px solid black; 
+                                                    padding: 5px; 
                                                     vertical-align: top; 
-                                                    text-align: left;
                                                 }
-                                                .print-editor-content table.options-table, .print-editor-content table.options-table td {
-                                                    border: none !important;
-                                                    padding: 2px;
-                                                }
-                                                .print-editor-content .header-table, .print-editor-content .header-table td, .print-editor-content .header-table p { 
-                                                    border: none !important; 
-                                                    text-align: left !important;
-                                                }
-                                                .print-editor-content .question-text {
-                                                    text-align: justify;
-                                                    margin-bottom: 10px;
-                                                    display: block;
-                                                }
-                                                .print-editor-content .options-container {
-                                                    display: flex;
-                                                    flex-wrap: wrap;
-                                                    justify-content: flex-start;
-                                                    margin-bottom: 15px;
-                                                    gap: 8px;
-                                                }
-                                                .print-editor-content .option {
-                                                    flex: 0 0 auto;
-                                                    min-width: fit-content;
-                                                    padding-right: 15px;
-                                                    white-space: nowrap;
-                                                    box-sizing: border-box;
-                                                }
-                                                .print-editor-content .option.w-1-4 { width: 25%; }
-                                                .print-editor-content .option.w-1-2 { width: 50%; }
-                                                .print-editor-content .option.w-full { width: 100%; flex: 1 1 100%; }
+                                                .print-editor-content .header-table td { border: none !important; }
                                                 .print-editor-content h3, .print-editor-content h4 { text-align: center; margin: 10px 0; font-weight: bold; }
                                                 .print-editor-content img { max-width: 100%; height: auto; }
                                                 .print-editor-content ul, .print-editor-content ol { padding-left: 20px; }
@@ -3269,7 +3144,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Right Column: Actions (Sidebar) */}
-            <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-y-auto pr-1 pb-4">
+            <div className="lg:col-span-4 flex flex-col gap-4">
               <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                 <h3 className="font-bold text-slate-800 mb-4">Thao tác</h3>
                 <div className="space-y-3">
@@ -3423,23 +3298,24 @@ const App: React.FC = () => {
                           Lưu vào kho cá nhân
                         </Button>
                         <Button
-                          className="w-full bg-slate-800 hover:bg-slate-900 shadow-md py-2.5 transition-colors"
+                          className="w-full bg-slate-800 hover:bg-slate-900 shadow-md py-2.5"
                           onClick={handleDownloadAll}
                           isLoading={genState.isLoading}
-                          icon={<Archive className="w-4 h-4 text-slate-300" />}
+                          icon={<Archive className="w-4 h-4" />}
                         >
                           Tải toàn bộ (Zip)
                         </Button>
                       </div>
 
                       {/* Section 3: Word Export */}
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
                           Xuất Word (.docx)
                         </p>
-                        <div className="flex flex-col gap-2">
-                          <button
-                            className="w-full group flex items-center gap-3 p-3 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-xl transition-all shadow-sm text-left"
+                        <div className="grid grid-cols-1 gap-2">
+                          <Button
+                            variant="outline"
+                            className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 justify-start h-auto py-3 px-4"
                             onClick={() =>
                               handleExportWord(
                                 genState.exam || editValue,
@@ -3447,23 +3323,23 @@ const App: React.FC = () => {
                                 "full",
                               )
                             }
-                          >
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            icon={
                               <FileText className="w-5 h-5 flex-shrink-0" />
+                            }
+                          >
+                            <div className="text-left">
+                              <div className="font-bold text-sm">
+                                Đề thi đầy đủ
+                              </div>
+                              <div className="text-[10px] opacity-70">
+                                Bao gồm cả Đề và Đáp án
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-slate-800 group-hover:text-blue-700 truncate">
-                                  Đề thi đầy đủ
-                                </h4>
-                                <p className="text-[11px] text-slate-500 truncate">
-                                  Bao gồm cả Đề và Đáp án
-                                </p>
-                            </div>
-                          </button>
-
-                          <div className="flex gap-2">
-                            <button
-                              className="w-full flex-1 group flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-lg transition-all shadow-sm"
+                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
                               onClick={() =>
                                 handleExportWord(
                                   genState.exam || editValue,
@@ -3471,23 +3347,26 @@ const App: React.FC = () => {
                                   "exam",
                                 )
                               }
+                              icon={
+                                <FileSignature className="w-3 h-3 flex-shrink-0" />
+                              }
                             >
-                                <FileSignature className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
-                                <span className="text-[11px] font-medium text-slate-700 group-hover:text-blue-700 truncate">Chỉ Đề thi</span>
-                            </button>
-                            <button
-                               className="w-full flex-1 group flex items-center justify-center gap-2 p-2.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 focus:ring-2 focus:ring-blue-100 rounded-lg transition-all shadow-sm"
-                               onClick={() =>
-                                 handleExportWord(
-                                   genState.exam || editValue,
-                                   "Dap_An_Only",
-                                   "key",
-                                 )
-                               }
+                              Chỉ Đề thi
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
+                              onClick={() =>
+                                handleExportWord(
+                                  genState.exam || editValue,
+                                  "Dap_An_Only",
+                                  "key",
+                                )
+                              }
+                              icon={<Split className="w-3 h-3 flex-shrink-0" />}
                             >
-                                <Split className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
-                                <span className="text-[11px] font-medium text-slate-700 group-hover:text-blue-700 truncate">Chỉ Đáp án</span>
-                            </button>
+                              Chỉ Đáp án
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -3638,41 +3517,28 @@ const App: React.FC = () => {
 
                       {/* Section 6: Error Report */}
                       {errorReport.length > 0 && (
-                        <div className="pt-3 border-t border-slate-100">
-                          <div className="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
-                            <p className="text-[11px] font-bold text-red-800 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                              <AlertCircle className="w-4 h-4 text-red-500" /> Quét lỗi
+                        <div className="pt-2 border-t border-slate-100">
+                          <div className="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
+                            <p className="text-[10px] font-bold text-red-800 uppercase tracking-widest mb-2 flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" /> Quét lỗi
                               tự động ({errorReport.length})
                             </p>
-                            <ul className="space-y-3 max-h-[160px] overflow-y-auto pr-2 list-disc pl-4 marker:text-red-400 text-red-700">
+                            <div className="space-y-3 max-h-[150px] overflow-y-auto pr-1">
                               {errorReport.map((err) => (
-                                <li
+                                <div
                                   key={err.id}
-                                  className="text-[12px]"
+                                  className="text-[11px] border-l-2 border-red-300 pl-3"
                                 >
-                                  <div className="font-semibold leading-tight mb-1">
+                                  <div className="font-bold text-red-700 flex items-start gap-1">
                                     {err.message}
                                   </div>
                                   {err.suggestedFix && (
-                                    <div className="text-red-800/80 italic text-[11px] leading-snug">
+                                    <div className="text-slate-600 mt-0.5 italic text-[10px]">
                                       💡 {err.suggestedFix}
                                     </div>
                                   )}
-                                </li>
+                                </div>
                               ))}
-                            </ul>
-                            <div className="mt-4 border-t border-red-200/50 pt-3">
-                              <Button
-                                variant="outline"
-                                className="w-full bg-white text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300 py-2"
-                                onClick={() => {
-                                  setIsEditing(true);
-                                }}
-                                icon={<Pencil className="w-3.5 h-3.5" />}
-                              >
-                                Sửa nhanh bằng tay
-                              </Button>
                             </div>
                           </div>
                         </div>

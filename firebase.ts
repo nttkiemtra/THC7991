@@ -7,7 +7,7 @@ import firebaseConfig from './firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Use initializeFirestore with settings optimized for sandboxed/proxy environments
+// Use initializeFirestore with long polling to fix "offline" issues in some environments
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 }, (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)') 
@@ -18,12 +18,12 @@ export const googleProvider = new GoogleAuthProvider();
 
 // Error Handling
 export enum OperationType {
-  CREATE = "create",
-  UPDATE = "update",
-  DELETE = "delete",
-  LIST = "list",
-  GET = "get",
-  WRITE = "write",
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
 }
 
 interface FirestoreErrorInfo {
@@ -42,85 +42,57 @@ interface FirestoreErrorInfo {
       email: string | null;
       photoUrl: string | null;
     }[];
-  };
+  }
 }
 
-export function handleFirestoreError(
-  error: unknown,
-  operationType: OperationType,
-  path: string | null,
-) {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const user = auth.currentUser;
-  const errorMsg = error instanceof Error ? error.message : String(error);
-  
   const errInfo: FirestoreErrorInfo = {
-    error: errorMsg,
+    error: error instanceof Error ? error.message : String(error),
     authInfo: {
       userId: user?.uid,
       email: user?.email,
       emailVerified: user?.emailVerified,
       isAnonymous: user?.isAnonymous,
       tenantId: user?.tenantId,
-      providerInfo:
-        user?.providerData.map((provider) => ({
-          providerId: provider.providerId,
-          displayName: provider.displayName,
-          email: provider.email,
-          photoUrl: provider.photoURL,
-        })) || [],
+      providerInfo: user?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
     },
     operationType,
-    path,
+    path
   };
-  console.error("Firestore Error: ", JSON.stringify(errInfo));
-  
-  // Custom event for global toast if needed
-  if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('firestore-error', { 
-        detail: { message: errorMsg, operationType } 
-      }));
-  }
-
-  // Do NOT throw. Throwing causes React ErrorBoundary to trigger and shows a white screen of death.
-  return errInfo;
-}
-
-// Firestore Status State
-export let isFirestoreConnected = true;
-const listeners: ((connected: boolean) => void)[] = [];
-
-export function onFirestoreStatusChange(cb: (connected: boolean) => void) {
-  listeners.push(cb);
-  cb(isFirestoreConnected);
-  return () => {
-    const idx = listeners.indexOf(cb);
-    if (idx !== -1) listeners.splice(idx, 1);
-  };
-}
-
-function updateStatus(status: boolean) {
-  isFirestoreConnected = status;
-  listeners.forEach(cb => cb(status));
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
 }
 
 // Validation Test
 export async function testFirestoreConnection() {
   try {
+    console.log("Testing Firestore connection for project:", firebaseConfig.projectId);
     // Attempting a server-side fetch to verify connectivity
-    await getDocFromServer(doc(db, 'test-connection', 'probe-' + Date.now()));
-    updateStatus(true);
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firestore connection verified successfully.");
   } catch (error: any) {
-    if (error.message && (error.message.includes('the client is offline') || error.code === 'unavailable')) {
-      updateStatus(false);
+    console.warn("Firestore Debug Info:", {
+      projectId: firebaseConfig.projectId,
+      databaseId: firebaseConfig.firestoreDatabaseId || '(default)',
+      errorMessage: error.message
+    });
+
+    if (error.message && error.message.includes('the client is offline')) {
       console.error("LỖI: Trình duyệt không thể kết nối với Firestore.");
-    } else if (error.code === 'permission-denied') {
-      updateStatus(true); // Permission denied means we ARE connected, just rejected
+      console.error("MẸO 1: Hãy kiểm tra xem bạn đã nhấn 'Create Database' trong Firebase Console (phần Firestore Database) chưa.");
+      console.error("MẸO 2: Đảm bảo bạn đã chọn đúng 'Cloud Firestore' chứ không phải 'Realtime Database'.");
+    } else if (error.code === 'permission-denied' || (error.message && error.message.includes('permission'))) {
+      console.info("Firestore: Đã kết nối nhưng bị từ chối quyền truy cập. Điều này là bình thường nếu Rules đang bật và bạn chưa đăng nhập.");
     } else {
       console.error("Lỗi Firestore khác:", error.message);
     }
   }
 }
 
-// Poke occasionally to check status
-setInterval(testFirestoreConnection, 30000);
 testFirestoreConnection();

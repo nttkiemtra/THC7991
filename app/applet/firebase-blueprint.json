@@ -1,0 +1,21 @@
+{
+  "entities": {
+    "ExamConfiguration": {
+      "title": "Cấu hình đề thi",
+      "description": "Lưu trữ toàn bộ cấu trúc và câu hỏi của một bộ đề thi",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Tên bộ đề" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Ngày tạo" },
+        "data": { "type": "object", "description": "Dữ liệu cấu hình đề thi" }
+      },
+      "required": ["name", "createdAt", "data"]
+    }
+  },
+  "firestore": {
+    "/examConfigurations/{id}": {
+      "schema": "ExamConfiguration",
+      "description": "Danh sách các bộ đề thi đã lưu"
+    }
+  }
+}

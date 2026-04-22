@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) { return id is string && id.size() <= 128; }
+    function isSignedIn() { return request.auth != null; }
+
+    match /examConfigurations/{id} {
+      allow read: if true; // Để đơn giản cho môi trường học thuật, cho phép đọc công khai
+      allow write: if isSignedIn(); // Chỉ cho phép người dùng đăng nhập lưu đề
+    }
+  }
+}

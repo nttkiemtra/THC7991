@@ -35,16 +35,10 @@ const MarkdownView: React.FC<Props> = ({ content, config }) => {
                 }
                 
                 /* Standard Table Styling */
-                .doc-preview-container table, 
-                .doc-preview-container table th, 
-                .doc-preview-container table td { 
-                    border: 1px solid black; 
-                }
-                
                 .doc-preview-container table { 
                     border-collapse: collapse; 
                     width: 100%; 
-                    margin: 0pt; 
+                    margin-bottom: 1rem; 
                     margin-left: auto;
                     margin-right: auto;
                 }
@@ -52,7 +46,8 @@ const MarkdownView: React.FC<Props> = ({ content, config }) => {
                 /* Enforce borders for standard tables (Matrix, Specs, Answer Key) */
                 .doc-preview-container table th, 
                 .doc-preview-container table td { 
-                    padding: 4px; 
+                    border: 1px solid black; 
+                    padding: 5px; 
                     vertical-align: top;
                     text-align: center;
                 }
@@ -77,38 +72,10 @@ const MarkdownView: React.FC<Props> = ({ content, config }) => {
                 }
                 
                 .doc-preview-container p { 
-                    margin-top: 0pt;
-                    margin-bottom: 0pt;
-                    text-align: justify;
+                    margin-bottom: 0px; 
+                    text-align: center;
                     line-height: 1.0;
-                    padding: 0;
                 }
-
-                .doc-preview-container .question-text {
-                    text-align: justify;
-                    margin-bottom: 10px;
-                    display: block;
-                }
-
-                .doc-preview-container .options-container {
-                    display: flex;
-                    flex-wrap: wrap;
-                    justify-content: flex-start;
-                    margin-bottom: 15px;
-                    gap: 8px; /* Slight gap for clarity */
-                }
-
-                .doc-preview-container .option {
-                    flex: 0 0 auto;
-                    min-width: fit-content;
-                    padding-right: 15px;
-                    white-space: nowrap;
-                    box-sizing: border-box;
-                }
-
-                .doc-preview-container .option.w-1-4 { width: 25%; }
-                .doc-preview-container .option.w-1-2 { width: 50%; }
-                .doc-preview-container .option.w-full { width: 100%; flex: 1 1 100%; }
             `}</style>
             <div 
                 className="doc-preview-container overflow-x-auto p-8 shadow-sm border border-slate-100" 

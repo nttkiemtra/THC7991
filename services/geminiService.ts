@@ -795,66 +795,48 @@ export const generateStep3Exam = async (
   - Tất cả các bảng trong đề (Bảng Ma trận, Bảng Đặc tả, Bảng trong nội dung câu hỏi) **BẮT BUỘC** sử dụng định dạng **Table Grid** (đường kẻ đơn, liền mạch, màu đen).
   - Sử dụng thẻ <table border="1" style="border-collapse: collapse; width: 100%;"> và CSS: border: 1px solid black; border-collapse: collapse;
 
-  **YÊU CẦU CĂN LỀ & GIÃN DÒNG:**
-  - Định dạng nội dung từ Phần I trở đi BẮT BUỘC phải được **Căn đều hai bên (Justify)**. 
-  - Đảm bảo không bị lỗi giãn cách chữ (khoảng cách giữa các từ phải tự nhiên).
-  - Khoảng cách giữa các dòng (line-height) là 1.0 (Single spacing).
-
   **YÊU CẦU HÌNH THỨC & NỘI DUNG:**
 
-  **1. HEADER ĐỀ THI (CHUẨN THCS NGUYỄN TRƯỜNG TỘ):**
-  - Sử dụng bảng ẩn viền (.header-table) để chia 2 cột:
-    + Cột Trái: **TRƯỜNG THCS NGUYỄN TRƯỜNG TỘ** (In hoa, đậm).
-    + Cột Phải: **BÀI KIỂM TRA HK ..., NH 20... - 20...** (In hoa, đậm)<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
-  - Ngay bên dưới thiết kế thêm Bảng ẩn viền chứa các thông tin: Họ và tên: ............., Lớp: .............
-  - **KHUNG ĐIỂM & LỜI PHÊ (BẮT BUỘC):**
-    Ngay dưới khối thông tin, kẻ bảng (border="1" width="100%"):
-    + Cột 1 (30%): **Điểm** (Để trống phần dưới)
-    + Cột 2 (70%): **Lời phê của thầy (cô) giáo:** (Để trống không gian viết)
+  **1. HEADER ĐỀ THI:**
+  - Kẻ bảng không viền (class="header-table" width="100%"):
+    + Cột Trái (40%): TRƯỜNG THCS ........................<br>Lớp: ........................<br>Họ và tên: ........................
+    + Cột Phải (60%): **BÀI KIỂM TRA ........................**<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
+  - **KHUNG ĐIỂM & NHẬN XÉT (BẮT BUỘC):**
+    Ngay dưới Header, kẻ bảng (border="1" width="100%"):
+    + Cột 1 (30% width, cao 80px): **Điểm**
+    + Cột 2 (70% width, cao 80px): **Lời nhận xét của thầy (cô) giáo:** (Để trống)
   - Tiêu đề giữa: **ĐỀ BÀI**
 
-  **2. PHẦN I. TRẮC NGHIỆM (3.0 điểm):**
-  - **BẮT BUỘC:** Ngay dưới tiêu đề Phần I, tạo **KHUNG ĐÁP ÁN CHO HỌC SINH**:
-    (Kẻ bảng 13 cột, 2 dòng. Dòng 1 có cột đầu là "Câu", sau đó là "1", "2"..."12". Dòng 2 có cột đầu là "Đáp án", các cột sau để trống).
-  - Sau đó đến danh sách 12 câu hỏi trắc nghiệm.
+  **2. PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN:**
+  - **BẮT BUỘC:** Ngay dưới tiêu đề Phần I, tạo **KHUNG TRẢ LỜI CHO HỌC SINH**:
+    (Kẻ bảng 2 dòng. Dòng 1: Câu 1, 2, ... [số lượng câu]. Dòng 2: Để trống "Đáp án").
+  - Sau đó mới đến danh sách câu hỏi.
   - **ĐỊNH DẠNG CÂU HỎI (QUAN TRỌNG):**
-    **Câu [Số]:** (Mức độ - Bài Y) [Nội dung câu hỏi]?
-    (BẮT BUỘC: Bọc toàn bộ Câu [Số]: và nội dung câu hỏi trong <div class="question-text">. Phần "Câu X:" phải được in đậm bằng thẻ <b>)
+    **Câu X.** (Mức độ - Bài Y) [Nội dung câu hỏi]?
+    A. ...
+    B. ...
+    C. ...
+    D. ...
+    (BẮT BUỘC: Phần "Câu X." phải được in đậm bằng thẻ <b>. Mỗi đáp án trắc nghiệm nằm trên 1 dòng riêng biệt)
     
-    **ĐỊNH DẠNG ĐÁP ÁN (Dạng I - Trắc nghiệm):**
-    - Bọc 4 phương án (A, B, C, D) trong một <div class="options-container">.
-    - **TỰ ĐỘNG TÍNH TOÁN SỐ DÒNG (BẮT BUỘC):**
-      + Đo độ dài (số ký tự) của đáp án dài nhất trong 4 đáp án.
-      + Nếu độ dài < 15 ký tự: Sử dụng thẻ <div class="option w-1-4"> (Dàn 4 đáp án trên 1 dòng).
-      + Nếu độ dài từ 15 đến 35 ký tự: Sử dụng thẻ <div class="option w-1-2"> (Dàn 2 đáp án trên 1 dòng).
-      + Nếu độ dài > 35 ký tự: Sử dụng thẻ <div class="option w-full"> (Mỗi đáp án 1 dòng - 4 dòng).
-    
-    *(Ví dụ: <div class="question-text"><b>Câu 1.</b> (NB) Thiết bị nào là thiết bị vào?</div>
-    <div class="options-container">
-      <div class="option w-1-4">A. Chuột.</div>
-      <div class="option w-1-4">B. Loa.</div>
-      <div class="option w-1-4">C. Màn hình.</div>
-      <div class="option w-1-4">D. Máy in.</div>
-    </div>)*
-    
+    *Ví dụ: <b>Câu 1.</b> (NB - Bài 10) Thiết bị nào sau đây là thiết bị vào?*
     *(Chú thích Mức độ: NB=Biết, TH=Hiểu, VD=Vận dụng, VDC=Vận dụng cao)*
 
   **3. PHẦN II. ĐÚNG/SAI:**
   - Tiêu đề: PHẦN II. ĐÚNG/SAI...
-  - Với mỗi câu hỏi:
+  - Với mỗi câu hỏi (VD: Câu 13):
     + Viết lời dẫn (Scenario).
-    + Kẻ **BẢNG 3 CỘT** (bắt buộc): | Phát biểu | Đúng | Sai |
+    + Kẻ **BẢNG 3 CỘT** (bắt buộc): | Lệnh hỏi | Đ | S |
     + Các dòng: a), b), c), d) [Nội dung mệnh đề] | | |
 
   **4. PHẦN III. GHÉP NỐI:**
   - Tiêu đề: PHẦN III. GHÉP NỐI...
-  - Kẻ **BẢNG 3 CỘT**: | Cột A | Cột trống | Cột B |
-    + Nội dung cột A | (Để trống học sinh điền) | Nội dung cột B |
-    + ... | ... | ... |
+  - Kẻ **BẢNG 3 CỘT**: | Cột A | Cột B | Ghép nối |
+    + Nội dung cột A | Nội dung cột B | 1 - ... |
+    + ... | ... | 2 - ... |
 
-  **5. PHẦN V: TỰ LUẬN (3.0 điểm):** 
-  - Liệt kê các câu hỏi kèm theo số điểm tương ứng trong ngoặc đơn ở đầu câu (VD: **Câu 15 (1.0 điểm):**).
-  - Kết thúc đề thi (bên dưới phần Tự luận), BẮT BUỘC phải chèn một dải giấy trống hoặc khoảng trống lớn với tiêu đề chữ in đậm giữa trang: **BÀI LÀM** để học sinh tự làm tự luận vào khoảng trống đó.
+  **5. PHẦN IV (Điền khuyết) & V (Tự luận):** 
+  - Trình bày như văn bản thông thường.
 
   **6. HƯỚNG DẪN CHẤM VÀ THANG ĐIỂM (Cuối tài liệu):**
   - Tiêu đề: HƯỚNG DẪN CHẤM VÀ THANG ĐIỂM.
@@ -867,34 +849,19 @@ export const generateStep3Exam = async (
     - Tổng điểm phần này là 3.0 điểm.
   
   **7. ĐỊNH DẠNG CÂU HỎI CÓ BẢNG:**
-  - Với bất kỳ câu hỏi nào có chứa bảng dữ liệu, bảng đó phải được kẻ khung rõ ràng (Table Grid). Tất cả bảng dùng đường kẻ đơn (Single line) với CSS: border-collapse: collapse; border: 1pt solid black;.
-  - Loại bỏ khoảng cách đệm dư thừa: padding: 2pt;. Tuyệt đối không để ẩn viền.
-
-  **8. KHỐI LỆNH SCRATCH (NẾU CÓ):**
-  - KHÔNG sử dụng thuộc tính border-radius hay Flexbox vì Word sẽ làm mất định dạng.
-  - Sử dụng cấu trúc Bảng HTML lồng nhau (Nested Tables). Mỗi khối lệnh là một bảng có màu nền (bgcolor) tương ứng với màu chuẩn của Scratch (VD: xanh dương cho Motion, vàng cho Events). Giữ nguyên cấu trúc khối.
-
-  **9. BỐ CỤC ĐÁP ÁN (A, B, C, D):**
-  - Tuyệt đối KHÔNG dùng \`display: flex\` để chia đáp án vì Word sẽ xếp chồng chúng thành 4 dòng.
-  - BẮT BUỘC sử dụng Bảng ẩn (border: none) để chia cột đáp án tùy theo độ dài:
-    + TH1: 4 đáp án ngắn -> Bảng 1 hàng, 4 cột (mỗi cột 25%).
-    + TH2: Đáp án dài vừa phải -> Bảng 2 hàng, 2 cột (mỗi cột 50%).
-    + TH3: Đáp án rất dài -> Bảng 4 hàng, 1 cột (mỗi cột 100%).
-  - Mỗi ô đáp án phải có định dạng: text-align: left; vertical-align: top;. Thiết lập border: none; cho bảng chia đáp án.
+  - Với bất kỳ câu hỏi nào có chứa bảng dữ liệu, bảng đó phải được kẻ khung rõ ràng (Table Grid). Tuyệt đối không để ẩn viền.
 
   **YÊU CẦU OUTPUT:**
-  1. Chỉ xuất ra nội dung HTML (không bao gồm thẻ <html> hay <head> vì hệ thống sẽ tự động ghép).
-  2. Font chữ: Times New Roman, cỡ 14pt (cho nội dung chính), 13pt (cho các bảng phụ nếu cần chật).
+  1. Chỉ xuất ra Full HTML Document (<!DOCTYPE html>...). 
+  2. Font Times New Roman, size 14pt, line-height 1.0.
   3. KHÔNG trả về markdown.
-  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ CHO IN ẤN/WORD):
-     - body, p, div { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; padding: 0; }
+  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ):
+     - body, p { text-align: center; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; }
      - .header-table td, .header-table p { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
-     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 0pt; }
-     - table { width: 100%; border-collapse: collapse; border: 1pt solid black; margin: 0pt; }
-     - td, th { border: 1pt solid black; padding: 2pt; vertical-align: top; text-align: center; }
-     - table.options-table, table.options-table td { border: none !important; padding: 2pt; }
-     - .question-text { text-align: justify; margin-bottom: 5px; display: block; }
-     - .question-content { text-align: justify; }
+     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 10px 0; }
+     - table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid black; margin-left: auto; margin-right: auto; }
+     - td, th { border: 1px solid black; padding: 5px; vertical-align: top; text-align: center; }
+     - .question-content { text-align: center; }
   `;
 
   try {
