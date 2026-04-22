@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Download, FileText, Loader2, Save, FolderOpen, 
   LogIn, LogOut, Trash2, Plus, Sparkles, ChevronRight, 
-  Layout, Settings, Database, Edit3, Eye, Printer, X, Check, ChevronLeft, Play, AlertCircle
+  Layout, Settings, Database, Edit3, Eye, Printer, X, Check, ChevronLeft, Play, AlertCircle,
+  Shapes, GraduationCap, BookOpen, Clock, Users, BarChart3, Search, ChevronDown, CheckCircle2, Code
 } from 'lucide-react';
 import { auth, loginWithGoogle, saveExamConfig, getExamConfigs, db } from './firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import scratchblocks from 'scratchblocks';
+import { processPayloadForScratchImages } from './scratchImageExtractor';
 
 const ScratchBlock = ({ code }: { code: string; key?: string | number }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,11 +194,20 @@ const INITIAL_EXAM_DATA = {
 };
 
 // --- HELPER COMPONENTS ---
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-    <div className="w-1 h-3 bg-indigo-500 rounded-full opacity-50"></div>
+const SectionTitle = ({ children, icon: Icon }: { children: React.ReactNode, icon?: any }) => (
+  <div className="flex items-center gap-3 mb-6">
+    {Icon && <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Icon className="w-5 h-5" /></div>}
+    <h3 className="font-serif text-xl font-bold text-slate-800 tracking-tight">
+      {children}
+    </h3>
+    <div className="flex-1 h-[1px] bg-slate-100 ml-4"></div>
+  </div>
+);
+
+const AcademicCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <div className={`bg-white rounded-3xl border border-slate-200/60 academic-shadow overflow-hidden transition-all hover:shadow-xl hover:shadow-indigo-500/5 ${className}`}>
     {children}
-  </h3>
+  </div>
 );
 
 export default function App() {
@@ -504,43 +515,60 @@ Hãy sinh đề thi áp dụng TẤT CẢ các quy tắc strict JSON và đảm 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar Navigation */}
-      <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 text-slate-500 flex flex-col items-center lg:items-start p-4 transition-all duration-300 z-30 shrink-0">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-            <Sparkles className="w-6 h-6" />
+      <aside className="w-20 lg:w-72 bg-white border-r border-slate-200/60 flex flex-col items-center lg:items-start p-6 transition-all duration-500 z-30 shrink-0 academic-shadow">
+        <div className="flex items-center gap-4 mb-12 px-2">
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-600/30 animate-float">
+            <GraduationCap className="w-7 h-7" />
           </div>
-          <span className="text-slate-900 font-bold text-lg hidden lg:block tracking-tight">ExamAI</span>
+          <div className="hidden lg:block leading-tight">
+            <span className="text-slate-900 font-serif text-2xl font-black tracking-tighter block">ExamAI</span>
+            <span className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.3em]">Hệ thống Giáo dục</span>
+          </div>
         </div>
 
-        <nav className="flex-1 w-full space-y-2">
-          <SidebarLink icon={<Layout className="w-5 h-5"/>} label="Bảng điều khiển" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
-          <SidebarLink 
-            icon={
-              <div className="relative">
-                <FileText className="w-5 h-5"/>
-                <span className="absolute -top-2 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-              </div>
-            } 
-            label="Soạn đề & Quét mẫu" 
-            active={currentView === 'workspace'} 
-            onClick={() => { setCurrentView('workspace'); setWizardStep(1); }} 
-          />
-          <SidebarLink icon={<Database className="w-5 h-5"/>} label="Ngân hàng câu hỏi" active={currentView === 'bank'} onClick={() => setCurrentView('bank')} />
-        </nav>
+        <div className="w-full space-y-8 flex-1">
+          <div>
+            <p className="hidden lg:block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-4">Menu Chính</p>
+            <nav className="space-y-2">
+              <SidebarLink icon={<Layout className="w-5 h-5"/>} label="Bảng điều khiển" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
+              <SidebarLink 
+                icon={<FileText className="w-5 h-5"/>} 
+                label="Soạn đề Thông minh" 
+                active={currentView === 'workspace'} 
+                onClick={() => { setCurrentView('workspace'); setWizardStep(1); }} 
+              />
+              <SidebarLink icon={<Database className="w-5 h-5"/>} label="Ngân hàng câu hỏi" active={currentView === 'bank'} onClick={() => setCurrentView('bank')} />
+            </nav>
+          </div>
+
+          <div>
+            <p className="hidden lg:block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-4">Công cụ AI</p>
+            <nav className="space-y-2">
+              <SidebarLink icon={<Sparkles className="w-5 h-5"/>} label="Trợ lý Soạn thảo" active={false} />
+              <SidebarLink icon={<Search className="w-5 h-5"/>} label="Quét đề cũ" active={false} />
+            </nav>
+          </div>
+        </div>
 
         <div className="w-full mt-auto">
           {user ? (
-             <div className="flex items-center lg:gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-100" onClick={() => signOut(auth)}>
-                <img src={user.photoURL || ""} alt={user.displayName || ""} className="w-8 h-8 rounded-full border border-slate-200" />
-                <div className="hidden lg:block overflow-hidden">
-                  <p className="text-slate-900 text-xs font-semibold truncate">{user.displayName}</p>
-                  <p className="text-[10px] text-slate-400 truncate tracking-tight">{user.email}</p>
+             <button 
+               onClick={() => signOut(auth)}
+               className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all group"
+             >
+                <div className="relative shrink-0">
+                  <img src={user.photoURL || ""} alt={user.displayName || ""} className="w-10 h-10 rounded-xl border-2 border-slate-100 group-hover:border-rose-200 transition-all" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white0 border-2 border-white rounded-full"></div>
                 </div>
-             </div>
+                <div className="hidden lg:block overflow-hidden text-left">
+                  <p className="text-slate-900 text-sm font-bold truncate tracking-tight">{user.displayName}</p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">Đăng xuất</p>
+                </div>
+             </button>
           ) : (
-            <button onClick={handleLogin} className="w-full flex items-center justify-center lg:justify-start gap-3 p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+            <button onClick={handleLogin} className="w-full flex items-center justify-center lg:justify-start gap-4 p-4 text-white bg-indigo-600 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
               <LogIn className="w-5 h-5" />
-              <span className="hidden lg:block font-medium">Đăng nhập</span>
+              <span className="hidden lg:block">Đăng nhập</span>
             </button>
           )}
         </div>
@@ -548,99 +576,204 @@ Hãy sinh đề thi áp dụng TẤT CẢ các quy tắc strict JSON và đảm 
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 h-full relative">
+        {/* Top Navbar */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 flex items-center justify-between sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-3">
+             {currentView === 'dashboard' ? (
+                <div className="flex items-baseline gap-2">
+                  <h1 className="text-xl font-serif font-bold text-slate-900">Chào buổi sáng,</h1>
+                  <span className="text-indigo-600 font-bold">{user?.displayName?.split(' ').pop() || 'Giáo viên'}</span>
+                </div>
+             ) : (
+                <div className="flex items-center gap-3 text-slate-500 font-medium">
+                  <span>Trang chủ</span>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="text-slate-900 font-bold">{currentView === 'workspace' ? 'Soạn thảo Đề thi' : 'Ngân hàng câu hỏi'}</span>
+                </div>
+             )}
+          </div>
+          
+          <div className="flex items-center gap-4">
+             <div className="hidden md:flex items-center bg-slate-100 rounded-xl px-4 py-2 gap-3 text-slate-400 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:bg-white focus-within:shadow-inner transition-all">
+               <Search className="w-4 h-4 text-slate-400" />
+               <input type="text" placeholder="Tìm kiếm đề thi..." className="bg-transparent border-none outline-none text-sm text-slate-900 placeholder:text-slate-400 w-48" />
+             </div>
+             <button className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+               <Settings className="w-5 h-5" />
+             </button>
+          </div>
+        </header>
+
         <AnimatePresence mode="wait">
           {currentView === 'dashboard' && (
             <motion.div 
               key="dashboard"
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="flex-1 overflow-auto p-8 custom-scrollbar"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="flex-1 overflow-auto p-8 lg:p-12 custom-scrollbar"
             >
-              <div className="max-w-6xl mx-auto space-y-10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Chào mừng quay trở lại</h1>
-                    <p className="text-slate-500 mt-1">Giám sát và tạo cấu trúc đề thi nhanh chóng với ExamAI.</p>
-                  </div>
-                        <button 
-                          onClick={() => { setCurrentView('workspace'); setWizardStep(1); }}
-                          className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all transform hover:-translate-y-1 active:scale-95"
-                        >
-                          <Plus className="w-6 h-6" />
-                          Bắt đầu Soạn đề mới
-                        </button>
-                        <button 
-                          onClick={downloadSampleTemplate}
-                          className="flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 border-2 border-indigo-600 rounded-2xl font-bold shadow-xl hover:bg-indigo-50 transition-all transform hover:-translate-y-1 active:scale-95 ml-4"
-                        >
-                          <FileText className="w-6 h-6" />
-                          Tải File Đề mẫu (.docx)
-                        </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <StatCard label="Tổng số đề" value={savedConfigs.length.toString()} icon={<FileText className="text-indigo-600" />} />
-                  <StatCard label="Câu hỏi được tạo" value="AI Powered" icon={<Sparkles className="text-cyan-500" />} />
-                  <StatCard label="Lượt xuất file" value="DOCX" icon={<Download className="text-indigo-600" />} />
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                   <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900">Đề thi gần đây</h3>
-                    {!user && (
-                      <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full font-medium border border-amber-100">Đăng nhập để xem bản lưu</span>
-                    )}
-                  </div>
-                  <div className="overflow-x-auto min-h-[200px] flex flex-col justify-center">
-                    {!user ? (
-                      <div className="text-center py-12 px-6">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                          <FolderOpen className="w-8 h-8 text-slate-300" />
+              <div className="max-w-7xl mx-auto space-y-12">
+                {/* Hero Section */}
+                <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-10 lg:p-16 text-white shadow-2xl">
+                   <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-500/20 to-transparent"></div>
+                   <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                     <div className="max-w-xl">
+                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6">
+                         <Sparkles className="w-3 h-3" />
+                         Công nghệ Gemini AI 1.5 
+                       </div>
+                       <h2 className="text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight tracking-tight">Soạn đề thi chuyên nghiệp chỉ trong vài giây.</h2>
+                       <p className="text-slate-400 text-lg mb-10 leading-relaxed">Hệ thống thông minh tự động hóa quy trình xây dựng đề thi theo ma trận, đặc tả và ngân hàng câu hỏi đa dạng.</p>
+                       <div className="flex flex-wrap items-center gap-4">
+                         <button 
+                           onClick={() => { setCurrentView('workspace'); setWizardStep(1); }}
+                           className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all flex items-center gap-3"
+                         >
+                           <Plus className="w-5 h-5" /> Soạn Đề Ngay
+                         </button>
+                         <button 
+                           onClick={downloadSampleTemplate}
+                           className="px-8 py-4 bg-white/10 text-white rounded-2xl font-bold hover:bg-white/20 transition-all backdrop-blur-md flex items-center gap-3 border border-white/10"
+                         >
+                           <FileText className="w-5 h-5" /> Tải Đề mẫu chuẩn
+                         </button>
+                       </div>
+                     </div>
+                     <div className="hidden lg:block flex-1 max-w-sm">
+                        <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 border border-white/10 rotate-3 shadow-2xl hover:rotate-0 transition-transform duration-700">
+                           <div className="space-y-4">
+                              <div className="h-4 bg-white/20 rounded-full w-3/4"></div>
+                              <div className="h-4 bg-white/10 rounded-full w-full"></div>
+                              <div className="h-4 bg-white/20 rounded-full w-1/2"></div>
+                              <div className="h-20 bg-indigo-500/30 rounded-2xl w-full"></div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="h-10 bg-white/10 rounded-xl"></div>
+                                <div className="h-10 bg-white/10 rounded-xl"></div>
+                              </div>
+                           </div>
                         </div>
-                        <h4 className="text-slate-900 font-bold mb-2">Bạn chưa đăng nhập</h4>
-                        <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">Vui lòng đăng nhập với Google để lưu cấu hình đề thi và xem lại các đề đã tạo.</p>
-                        <button onClick={handleLogin} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
-                          Đăng nhập ngay
-                        </button>
+                     </div>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                  <StatCard label="Đề thi đã lưu" value={savedConfigs.length.toString()} icon={<BookOpen />} trend="+2 tuần qua" />
+                  <StatCard label="Ngân hàng câu hỏi" value="5.2k+" icon={<Database />} />
+                  <StatCard label="Tổng lượt tải" value="1.8k" icon={<Download />} trend="tăng 12%" />
+                  <StatCard label="Tiết kiệm thời gian" value="95%" icon={<Clock />} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                   <AcademicCard className="lg:col-span-2">
+                      <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                             <Clock className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <h3 className="font-serif font-bold text-slate-900">Đề thi gần đây</h3>
+                             <p className="text-xs text-slate-500">Các dự án soạn đề bạn mới cập nhật</p>
+                           </div>
+                         </div>
+                         <button className="text-indigo-600 text-sm font-bold hover:underline">Xem tất cả</button>
                       </div>
-                    ) : (
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="bg-slate-50 text-[11px] uppercase tracking-wider font-bold text-slate-400">
-                            <th className="px-6 py-4">Tên cấu hình</th>
-                            <th className="px-6 py-4">Môn học</th>
-                            <th className="px-6 py-4">Ngày tạo</th>
-                            <th className="px-6 py-4 text-right">Thao tác</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {savedConfigs.length === 0 ? (
-                            <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">Chưa có dữ liệu nào. Hãy bắt đầu tạo đề thi đầu tiên!</td></tr>
-                          ) : savedConfigs.slice(0, 10).map((config) => (
-                            <tr key={config.id} className="hover:bg-slate-50 transition-colors group">
-                              <td className="px-6 py-4 font-semibold text-slate-900">{config.name}</td>
-                              <td className="px-6 py-4 text-slate-500">{config.data.headerConfig?.subject}</td>
-                              <td className="px-6 py-4 text-slate-500 text-sm">{config.createdAt?.toDate ? config.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
-                              <td className="px-6 py-4 text-right space-x-2">
-                                <button 
-                                  onClick={() => handleLoad(config)} 
-                                  className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2 inline-flex"
-                                >
-                                  <Play className="w-3 h-3"/>
-                                  Sử dụng
-                                </button>
-                                <button 
-                                  onClick={() => handleDelete(config.id)} 
-                                  className="p-2 text-slate-300 hover:text-red-500 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4"/>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
+                      <div className="overflow-x-auto min-h-[300px]">
+                        {!user ? (
+                          <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+                             <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6">
+                                <FolderOpen className="w-10 h-10 text-slate-300" />
+                             </div>
+                             <h4 className="text-lg font-bold text-slate-900 mb-2">Đăng nhập để đồng bộ</h4>
+                             <p className="text-slate-500 text-sm mb-8 max-w-xs leading-relaxed">Hãy đăng nhập để lưu trữ đề thi lên đám mây và làm việc mọi lúc mọi nơi.</p>
+                             <button onClick={handleLogin} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20">
+                               Đăng nhập Ngay
+                             </button>
+                          </div>
+                        ) : savedConfigs.length === 0 ? (
+                           <div className="flex flex-col items-center justify-center py-20 px-8 text-center text-slate-400">
+                             <p className="italic">Bạn chưa có đề thi nào. Hãy bắt đầu tạo một đề thi mới!</p>
+                           </div>
+                        ) : (
+                          <table className="w-full text-left">
+                            <thead className="bg-slate-50/50">
+                              <tr className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                <th className="px-8 py-5">Tên Đề thi</th>
+                                <th className="px-8 py-5">Môn học</th>
+                                <th className="px-8 py-5">Ngày tạo</th>
+                                <th className="px-8 py-5 text-right">Chỉnh sửa</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {savedConfigs.slice(0, 5).map((config) => (
+                                <tr key={config.id} className="group hover:bg-slate-50 transition-colors">
+                                  <td className="px-8 py-5">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 group-hover:scale-110 transition-transform">
+                                        <FileText className="w-4 h-4" />
+                                      </div>
+                                      <span className="font-bold text-slate-900 text-sm">{config.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-8 py-5">
+                                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">{config.data.headerConfig?.subject || 'Tin học'}</span>
+                                  </td>
+                                  <td className="px-8 py-5 text-slate-400 text-xs font-medium">
+                                    {config.createdAt?.toDate ? config.createdAt.toDate().toLocaleDateString('vi-VN') : 'Mới tạo'}
+                                  </td>
+                                  <td className="px-8 py-5 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button 
+                                        onClick={() => handleLoad(config)} 
+                                        className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-xl transition-all"
+                                        title="Sử dụng cấu hình này"
+                                      >
+                                        <ChevronRight className="w-5 h-5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDelete(config.id)} 
+                                        className="p-2 text-slate-300 hover:text-rose-500 rounded-xl transition-all"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                   </AcademicCard>
+
+                   <div className="space-y-8">
+                      <AcademicCard className="p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none shadow-indigo-600/30">
+                         <h3 className="text-xl font-bold mb-4 font-serif">Nâng cấp Kho lưu trữ</h3>
+                         <p className="text-indigo-100 text-sm mb-8 leading-relaxed opacity-80">Kết nối Google Drive để tự động lưu trữ các bản xuất .docx của bạn.</p>
+                         <button className="w-full py-4 bg-white text-indigo-600 rounded-2xl font-bold shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+                            <Save className="w-5 h-5" /> Kết nôi Drive
+                         </button>
+                      </AcademicCard>
+
+                       <AcademicCard className="p-8">
+                         <h3 className="text-lg font-bold mb-6 font-serif text-slate-900">Hoạt động Giáo dục</h3>
+                          <div className="space-y-6">
+                             {[
+                               { icon: <GraduationCap />, label: 'Đề thi HK1 Tin học 9', time: '2 giờ trước', color: 'text-indigo-600 bg-indigo-50' },
+                               { icon: <Users />, label: 'Bản nháp Đề lớp 7A', time: '1 ngày trước', color: 'text-emerald-600 bg-white' },
+                               { icon: <BarChart3 />, label: 'Cập nhật Ma trận mới', time: '3 ngày trước', color: 'text-amber-600 bg-amber-50' }
+                             ].map((item, i) => (
+                               <div key={i} className="flex items-center gap-4">
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                                    {React.cloneElement(item.icon as React.ReactElement, { className: 'w-5 h-5' })}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-slate-900 leading-none mb-1">{item.label}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium">{item.time}</p>
+                                  </div>
+                               </div>
+                             ))}
+                          </div>
+                      </AcademicCard>
+                   </div>
                 </div>
               </div>
             </motion.div>
@@ -653,465 +786,629 @@ Hãy sinh đề thi áp dụng TẤT CẢ các quy tắc strict JSON và đảm 
               className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden"
             >
               {/* Universal Header with Progress Bar */}
-              <header className="h-auto min-h-[88px] border-b border-slate-200 bg-white px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 shadow-sm relative z-20">
-                <div className="flex items-center justify-between w-full md:w-auto gap-4">
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setCurrentView('dashboard')} className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-500 hover:text-slate-900 border border-slate-200">
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <h2 className="text-slate-900 font-bold text-lg whitespace-nowrap">Soạn thảo Đề</h2>
-                  </div>
-                  
-                  {/* Mobile Header Actions */}
-                  <div className="flex md:hidden items-center gap-2">
-                     {user && <button onClick={handleSave} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Save className="w-5 h-5"/></button>}
+              <header className="h-28 border-b border-slate-200/60 bg-white/80 backdrop-blur-md px-10 flex items-center justify-between gap-8 shrink-0 z-20">
+                <div className="flex items-center gap-6">
+                  <button onClick={() => setCurrentView('dashboard')} className="p-3 hover:bg-slate-100 rounded-2xl transition-all text-slate-400 hover:text-slate-900 border border-slate-200/60">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div className="hidden lg:block">
+                    <h2 className="text-slate-900 font-serif font-bold text-xl tracking-tight">Soạn thảo Đề thi</h2>
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Dự án: {saveName || 'Chưa đặt tên'}</p>
                   </div>
                 </div>
 
-                {/* Progress Bar (Responsive) */}
-                <div className="flex items-center scale-90 md:scale-100">
-                  <WizardStep step={1} current={wizardStep} label="Cấu hình" />
-                  <div className={`h-[2px] w-8 md:w-16 lg:w-24 transition-colors duration-300 ${wizardStep >= 2 ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
-                  <WizardStep step={2} current={wizardStep} label="Ma trận" />
-                  <div className={`h-[2px] w-8 md:w-16 lg:w-24 transition-colors duration-300 ${wizardStep >= 3 ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
-                  <WizardStep step={3} current={wizardStep} label="Đặc tả" />
-                  <div className={`h-[2px] w-8 md:w-16 lg:w-24 transition-colors duration-300 ${wizardStep >= 4 ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
-                  <WizardStep step={4} current={wizardStep} label="Đề thi" />
+                {/* Academic Progress Stepper */}
+                <div className="flex items-center gap-1">
+                  <WizardStep step={1} current={wizardStep} label="Cấu hình" />
+                  <div className={`h-0.5 w-12 md:w-20 rounded-full transition-all duration-700 mx-2 ${wizardStep >= 2 ? 'bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.3)]' : 'bg-slate-100'}`}></div>
+                  <WizardStep step={2} current={wizardStep} label="Ma trận" />
+                  <div className={`h-0.5 w-12 md:w-20 rounded-full transition-all duration-700 mx-2 ${wizardStep >= 3 ? 'bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.3)]' : 'bg-slate-100'}`}></div>
+                  <WizardStep step={3} current={wizardStep} label="Đặc tả AI" />
+                  <div className={`h-0.5 w-12 md:w-20 rounded-full transition-all duration-700 mx-2 ${wizardStep >= 4 ? 'bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.3)]' : 'bg-slate-100'}`}></div>
+                  <WizardStep step={4} current={wizardStep} label="Thành phẩm" />
                 </div>
 
                 {/* Header Actions */}
-                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                <div className="flex items-center gap-3">
                   {user && (
-                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 gap-2">
+                    <div className="hidden md:flex items-center bg-slate-50 border border-slate-200/60 rounded-2xl py-2 px-4 gap-3 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:bg-white transition-all">
+                      <Save className="w-4 h-4 text-slate-400" />
                       <input 
                         type="text" 
-                        placeholder="Tên bản lưu..." 
-                        className="bg-transparent text-sm w-32 outline-none font-medium text-slate-700"
+                        placeholder="Tên bản lưu..." 
+                        className="bg-transparent text-sm w-36 outline-none font-bold text-slate-900 placeholder:text-slate-400"
                         value={saveName}
                         onChange={(e) => setSaveName(e.target.value)}
                       />
                       <button 
                         onClick={handleSave} 
-                        className="text-indigo-600 hover:text-indigo-800 p-1.5 bg-white border border-indigo-100 rounded-md transition-all shadow-sm flex items-center gap-2 text-xs font-bold"
+                        className="text-indigo-600 hover:text-indigo-800 text-xs font-black uppercase tracking-widest pl-2 border-l border-slate-200"
                       >
-                        <Save className="w-4 h-4"/>
                         Lưu
                       </button>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    {wizardStep > 1 && (
-                      <button 
-                        onClick={() => setWizardStep(prev => Math.max(prev - 1, 1))}
-                        className="px-4 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 text-sm"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        Quay lại
-                      </button>
-                    )}
+                  {wizardStep > 1 && (
+                    <button 
+                      onClick={() => setWizardStep(prev => Math.max(prev - 1, 1))}
+                      className="px-6 py-3 bg-white text-slate-600 border border-slate-200 rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 text-sm"
+                    >
+                      Quay lại
+                    </button>
+                  )}
 
-                    {wizardStep === 4 ? (
-                      <button onClick={generateWordDoc} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black transition-all shadow-lg">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        Xuất đề
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => setWizardStep(prev => Math.min(prev + 1, 4))}
-                        className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2 text-sm"
-                      >
-                        Kế tiếp
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+                  {wizardStep === 4 ? (
+                    <button onClick={generateWordDoc} className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold flex items-center gap-3 hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-5 h-5" />}
+                      Xuất file Word
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => setWizardStep(prev => Math.min(prev + 1, 4))}
+                      className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-indigo-600/30 hover:bg-indigo-700 transition-all flex items-center gap-3 active:scale-95"
+                    >
+                      Tiếp tục
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               </header>
+
 
               {/* Dynamic Body Content */}
               <div className="flex-1 overflow-auto flex flex-col">
                   {wizardStep === 1 && (
-                    <div className="flex-1 overflow-auto p-8 lg:p-12 custom-scrollbar animate-in slide-in-from-bottom-2">
-                      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Template Selection */}
-                        <div className="lg:col-span-1 space-y-6">
-                           <div className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl shadow-indigo-900/20">
-                             <Sparkles className="w-8 h-8 mb-4 text-indigo-300" />
-                             <h3 className="font-bold text-lg mb-2">Quét từ Mẫu có sẵn (AI)</h3>
-                             <p className="text-indigo-200 text-sm leading-relaxed mb-4">Bạn có mẫu đề cũ? Hãy copy nội dung phần tiêu đề và dán vào đây, AI sẽ tự động điền các ô bên phải cho bạn.</p>
-                             <button 
-                               onClick={() => setShowScanner(true)}
-                               className="w-full py-3.5 bg-white text-indigo-900 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:bg-indigo-50 shadow-lg"
-                             >
-                               <Eye className="w-4 h-4"/> Bắt đầu Quét Mẫu
-                             </button>
+                    <div className="flex-1 overflow-auto p-8 lg:p-16 custom-scrollbar">
+                      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        {/* Configuration Column */}
+                        <div className="lg:col-span-7 space-y-10">
+                           <div>
+                             <SectionTitle icon={Settings}>Thông tin Cơ bản</SectionTitle>
+                             <AcademicCard className="p-8 space-y-6">
+                                <div className="grid grid-cols-2 gap-6">
+                                  <EditableField label="Tên trường" value={examData.headerConfig.school} onChange={(v) => updateHeader('school', v)} />
+                                  <EditableField label="Lớp / Khối" value={examData.headerConfig.class} onChange={(v) => updateHeader('class', v)} />
+                                  <EditableField label="Môn học" value={examData.headerConfig.subject} onChange={(v) => updateHeader('subject', v)} />
+                                  <EditableField label="Thời gian" value={examData.headerConfig.time} onChange={(v) => updateHeader('time', v)} />
+                                </div>
+                                <EditableField label="Tiêu đề đề thi" value={examData.headerConfig.examTitle} onChange={(v) => updateHeader('examTitle', v)} />
+                                <EditableField label="Ghi chú học sinh" value={examData.headerConfig.student} onChange={(v) => updateHeader('student', v)} />
+                             </AcademicCard>
                            </div>
 
-                           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-4">Chọn Mẫu (Template)</h3>
-                             <div className="grid grid-cols-1 gap-3">
-                               <button 
-                                 onClick={downloadSampleTemplate}
-                                 className="w-full p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-500 text-emerald-700 font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all mb-4"
-                               >
-                                 <Download className="w-4 h-4"/> Tải mẫu chuẩn để tham khảo
-                               </button>
-                               {HEADER_TEMPLATES.map(tpl => (
-                                 <button 
-                                   key={tpl.id}
-                                   onClick={() => applyTemplate(tpl.id)}
-                                   className={`w-full p-4 rounded-2xl text-left border transition-all ${examData.templateId === tpl.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-300 group'}`}
-                                 >
-                                   <div className="flex items-center justify-between">
-                                      <p className="font-bold text-sm tracking-tight">{tpl.name}</p>
-                                      {examData.templateId === tpl.id && <Check className="w-3 h-3 text-indigo-200" />}
-                                   </div>
-                                 </button>
-                               ))}
-                             </div>
-                           </div>
-                           
-                           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-4">Cấu hình hiển thị</h3>
-                             <div className="space-y-4">
-                                <label className="flex items-center gap-3 cursor-pointer group">
-                                   <div className={`w-10 h-6 rounded-full relative transition-all ${examData.includeScoreTable ? 'bg-indigo-600' : 'bg-slate-200'}`} onClick={() => setExamData((p:any) => ({...p, includeScoreTable: !p.includeScoreTable}))}>
-                                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${examData.includeScoreTable ? 'left-5' : 'left-1'}`}></div>
-                                   </div>
-                                   <span className="text-sm font-medium text-slate-700">Khung ghi Điểm</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer group">
-                                   <div className={`w-10 h-6 rounded-full relative transition-all ${examData.includeMatrix ? 'bg-indigo-600' : 'bg-slate-200'}`} onClick={() => setExamData((p:any) => ({...p, includeMatrix: !p.includeMatrix}))}>
-                                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${examData.includeMatrix ? 'left-5' : 'left-1'}`}></div>
-                                   </div>
-                                   <span className="text-sm font-medium text-slate-700">Chèn Ma trận</span>
-                                </label>
+                           <div>
+                             <SectionTitle icon={Shapes}>Cấu hình Nâng cao</SectionTitle>
+                             <div className="grid grid-cols-2 gap-6">
+                                <div 
+                                  onClick={() => setExamData((p:any) => ({...p, includeScoreTable: !p.includeScoreTable}))}
+                                  className={`p-6 rounded-3xl border-2 cursor-pointer transition-all group ${examData.includeScoreTable ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                     <div className={`p-2 rounded-xl ${examData.includeScoreTable ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'} transition-colors`}>
+                                       <BarChart3 className="w-5 h-5" />
+                                     </div>
+                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${examData.includeScoreTable ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200 bg-white'}`}>
+                                        {examData.includeScoreTable && <Check className="w-4 h-4 text-white stroke-[4px]" />}
+                                     </div>
+                                  </div>
+                                  <p className="font-bold text-slate-900 mb-1">Khung ghi điểm</p>
+                                  <p className="text-xs text-slate-500 leading-relaxed">Hiển thị bảng tổng hợp điểm số cho giáo viên chấm bài.</p>
+                                </div>
+
+                                <div 
+                                  onClick={() => setExamData((p:any) => ({...p, includeMatrix: !p.includeMatrix}))}
+                                  className={`p-6 rounded-3xl border-2 cursor-pointer transition-all group ${examData.includeMatrix ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                     <div className={`p-2 rounded-xl ${examData.includeMatrix ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'} transition-colors`}>
+                                       <Layout className="w-5 h-5" />
+                                     </div>
+                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${examData.includeMatrix ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200 bg-white'}`}>
+                                        {examData.includeMatrix && <Check className="w-4 h-4 text-white stroke-[4px]" />}
+                                     </div>
+                                  </div>
+                                  <p className="font-bold text-slate-900 mb-1">Chèn Ma trận đề</p>
+                                  <p className="text-xs text-slate-500 leading-relaxed">In kèm ma trận đề thi vào bản Word để chuẩn hóa quy trình.</p>
+                                </div>
                              </div>
                            </div>
                         </div>
 
-                        {/* Scanner Overlay Modal */}
+                        {/* Templates Column */}
+                        <div className="lg:col-span-5 space-y-10">
+                           <div>
+                             <SectionTitle icon={Sparkles}>Mẫu & AI Quét</SectionTitle>
+                             <div className="flex flex-col gap-6">
+                               <div className="relative group overflow-hidden bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl transition-all hover:-translate-y-1">
+                                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full translate-x-10 -translate-y-10"></div>
+                                  <h4 className="font-serif text-2xl font-bold mb-4 tracking-tight">AI Scanner</h4>
+                                  <p className="text-slate-400 text-sm mb-8 leading-relaxed">Dán nội dung tiêu đề đề thi cũ của bạn vào đây, AI sẽ tự động trích xuất các thông tin cần thiết.</p>
+                                  <button 
+                                    onClick={() => setShowScanner(true)}
+                                    className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold shadow-lg shadow-black/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
+                                  >
+                                    <Eye className="w-5 h-5" /> Bắt đầu Trích xuất AI
+                                  </button>
+                               </div>
+
+                               <AcademicCard className="p-8">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Thư viện Mẫu chuẩn</p>
+                                  <div className="space-y-3">
+                                    {HEADER_TEMPLATES.map(tpl => (
+                                      <button 
+                                        key={tpl.id}
+                                        onClick={() => applyTemplate(tpl.id)}
+                                        className={`w-full p-4 rounded-2xl text-left border-2 transition-all relative group
+                                          ${examData.templateId === tpl.id ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-slate-100 hover:border-indigo-100'}`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div>
+                                            <p className={`font-bold text-sm tracking-tight ${examData.templateId === tpl.id ? 'text-indigo-600' : 'text-slate-700'}`}>{tpl.name}</p>
+                                            <p className="text-[10px] text-slate-400 font-medium">Bố cục tiêu chuẩn</p>
+                                          </div>
+                                          {examData.templateId === tpl.id ? (
+                                            <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                                              <Check className="w-3.5 h-3.5 text-white stroke-[4px]" />
+                                            </div>
+                                          ) : (
+                                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                                          )}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <button 
+                                    onClick={downloadSampleTemplate}
+                                    className="w-full mt-6 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-100 transition-all border border-slate-200/60"
+                                  >
+                                    <Download className="w-4 h-4" /> Tải tài liệu mẫu
+                                  </button>
+                               </AcademicCard>
+                             </div>
+                           </div>
+                        </div>
+
+                        {/* Scanner Modal Integration */}
+                        <AnimatePresence>
                         {showScanner && (
-                          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-                            <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl p-8 space-y-6">
+                          <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+                          >
+                            <motion.div 
+                              initial={{ scale: 0.95, y: 20 }}
+                              animate={{ scale: 1, y: 0 }}
+                              exit={{ scale: 0.95, y: 20 }}
+                              className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 space-y-8"
+                            >
                               <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-bold text-slate-900">Quét dữ liệu từ văn bản</h3>
-                                <button onClick={() => setShowScanner(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400"/></button>
+                                <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                                  <Sparkles className="w-6 h-6" />
+                                </div>
+                                <button onClick={() => setShowScanner(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-6 h-6 text-slate-400"/></button>
                               </div>
-                              <p className="text-slate-500 text-sm italic">Dán nội dung tiêu đề đề thi của bạn vào ô dưới đây (Ví dụ: tên trường, năm học, tên bài kiểm tra...):</p>
+                              
+                              <div>
+                                <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Quét dữ liệu Đề thi</h3>
+                                <p className="text-slate-500 text-sm">AI sẽ tự động nhận diện Trường, Môn học, Thời gian... từ văn bản bạn cung cấp.</p>
+                              </div>
+
                               <textarea 
+                                className="w-full h-48 bg-slate-50 border border-slate-200 rounded-3xl p-6 text-sm text-slate-700 focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all outline-none resize-none placeholder:text-slate-300"
+                                placeholder="Dán phần tiêu đề đề thi tại đây... VD: PHÒNG GIÁO DỤC VÀ ĐÀO TẠO QUẬN X... ĐỀ KIỂM TRA HỌC KỲ I..."
                                 value={scanText}
                                 onChange={(e) => setScanText(e.target.value)}
-                                className="w-full h-48 bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all resize-none"
-                                placeholder="TRƯỜNG THCS ABC... LỚP 9... KIỂM TRA GIỮA KỲ..."
                               ></textarea>
-                              <div className="flex gap-3">
-                                <button onClick={() => setShowScanner(false)} className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-50 rounded-2xl transition-colors">Hủy bỏ</button>
-                                <button 
-                                  onClick={handleScanTemplate}
-                                  disabled={isAnalyzingTemplate || !scanText.trim()}
-                                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-                                >
-                                  {isAnalyzingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                                  {isAnalyzingTemplate ? "AI Đang phân tích..." : "Phân tích & Áp dụng"}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+
+                              <button 
+                                onClick={handleScanTemplate}
+                                disabled={isAnalyzingTemplate || !scanText.trim()}
+                                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                              >
+                                {isAnalyzingTemplate ? <Loader2 className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />}
+                                {isAnalyzingTemplate ? 'Đang phân tích...' : 'Bắt đầu Phân tích AI'}
+                              </button>
+                            </motion.div>
+                          </motion.div>
                         )}
-
-                        {/* Details Configuration */}
-                        <div className="lg:col-span-2 space-y-4">
-                          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
-                            <div className="mb-4 pb-4 border-b border-slate-100">
-                              <h2 className="text-xl font-bold text-slate-900 tracking-tight">1. Thông tin Tiêu đề</h2>
-                            </div>
-                            <div className="space-y-4">
-                              <EditableField label="Tên trường / Cở sở giáo dục" value={examData.headerConfig.school} onChange={(v) => updateHeader('school', v)} />
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <EditableField label="Thông tin Lớp / Khối" value={examData.headerConfig.class} onChange={(v) => updateHeader('class', v)} />
-                                <EditableField label="Dòng tên học sinh" value={examData.headerConfig.student} onChange={(v) => updateHeader('student', v)} />
-                              </div>
-                              <div className="border-t border-slate-50 pt-2"></div>
-                              <EditableField label="Tiêu đề bài kiểm tra" value={examData.headerConfig.examTitle} onChange={(v) => updateHeader('examTitle', v)} />
-                              <EditableField label="Môn học / Phân môn" value={examData.headerConfig.subject} onChange={(v) => updateHeader('subject', v)} />
-                              <EditableField label="Thời gian làm bài" value={examData.headerConfig.time} onChange={(v) => updateHeader('time', v)} />
-                            </div>
-                          </div>
-
-                          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                             <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-6">Xem trước tiêu đề nhanh</h4>
-                             <div className="font-serif bg-slate-50 p-8 rounded-2xl border border-slate-100 shadow-inner scale-95 origin-top" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                                <div className="flex justify-between border-b pb-4 mb-4">
-                                   <div className="text-center">
-                                      <div className="uppercase font-bold text-sm tracking-tighter">{examData.headerConfig.school || "[TÊN TRƯỜNG]"}</div>
-                                      <div className="font-bold text-sm tracking-tight">{examData.headerConfig.class || "[LỚP]"}</div>
-                                   </div>
-                                   <div className="text-center font-bold text-sm tracking-tight">
-                                      <div>{examData.headerConfig.subject || "[MÔN HỌC]"}</div>
-                                      <div className="font-normal italic text-[11px]">{examData.headerConfig.time || "[THỜI GIAN]"}</div>
-                                   </div>
-                                </div>
-                                <div className="text-xs mb-4">{examData.headerConfig.student || "[DÒNG TÊN HỌC SINH]"}</div>
-                                <div className="text-center font-bold text-base uppercase tracking-normal">{examData.headerConfig.examTitle || "[TIÊU ĐỀ KIỂM TRA]"}</div>
-                             </div>
-                             <p className="mt-4 text-[10px] text-slate-400 italic text-center">Lưu ý: Font chữ và căn lề sẽ được áp dụng chuẩn Times New Roman khi xuất file Word.</p>
-                          </div>
-                        </div>
+                        </AnimatePresence>
                       </div>
                     </div>
                   )}
 
                   {wizardStep === 2 && (
-                    <div className="flex-1 overflow-auto p-4 lg:p-6 custom-scrollbar animate-in slide-in-from-right-4">
-                      <div className="max-w-5xl mx-auto space-y-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <div className="flex justify-between items-center bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                          <div>
-                            <h2 className="text-xl font-bold text-indigo-900 tracking-tight">2. Xây dựng Ma trận</h2>
-                            <p className="text-indigo-600/70 text-xs">Thiết lập ma trận nhận thức theo các chuẩn kiến thức kỹ năng.</p>
-                          </div>
-                          <button onClick={addMatrixRow} className="px-3 py-1.5 bg-white text-indigo-600 font-bold rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-50 flex items-center gap-2 text-xs">
-                             <Plus className="w-4 h-4"/> Thêm chủ đề
-                          </button>
+                    <div className="flex-1 overflow-auto p-8 lg:p-16 custom-scrollbar animate-in fade-in slide-in-from-right-8 duration-700">
+                      <div className="max-w-6xl mx-auto space-y-10">
+                        <div className="flex items-center justify-between">
+                           <div>
+                             <SectionTitle icon={Layout}>Ma trận Phân bổ Ma trận nhận thức</SectionTitle>
+                             <p className="text-slate-500 text-sm -mt-2">Xác định số lượng câu hỏi cho từng chủ đề và mức độ nhận thức (NB, TH, VD, VDC).</p>
+                           </div>
+                           <button 
+                             onClick={addMatrixRow}
+                             className="px-6 py-3 bg-white text-indigo-600 border border-indigo-100 rounded-2xl font-bold shadow-sm hover:bg-indigo-50 transition-all flex items-center gap-2 text-sm"
+                           >
+                             <Plus className="w-5 h-5" /> Thêm Chủ đề
+                           </button>
                         </div>
-                        
-                        <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                          <table className="w-full text-left bg-white text-sm">
-                            <thead>
-                              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
-                                <th className="p-3 w-1/3">Nội dung / Chủ đề</th>
-                                <th className="p-3 text-center">Nhận biết</th>
-                                <th className="p-3 text-center">Thông hiểu</th>
-                                <th className="p-3 text-center">Vận dụng</th>
-                                <th className="p-3 text-center">VD Cao</th>
-                                <th className="p-3 text-center w-14">Xóa</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                               {examData.matrix.map((row: any, i: number) => (
-                                 <tr key={i} className="border-b border-slate-50 hover:bg-slate-50">
-                                   <td className="p-2">
-                                      <input type="text" value={row.topic} onChange={e => updateMatrix(i, 'topic', e.target.value)} className="w-full bg-transparent border-b border-dashed border-slate-200 focus:border-indigo-400 py-1 px-1 outline-none font-medium text-slate-700 text-sm" />
-                                   </td>
-                                   <td className="p-2" align="center"><input type="number" min="0" value={row.nb} onChange={e => updateMatrix(i, 'nb', parseInt(e.target.value)||0)} className="w-12 bg-slate-50 rounded p-1 text-center font-bold text-slate-700 outline-none focus:ring-1 ring-indigo-200" /></td>
-                                   <td className="p-2" align="center"><input type="number" min="0" value={row.th} onChange={e => updateMatrix(i, 'th', parseInt(e.target.value)||0)} className="w-12 bg-slate-50 rounded p-1 text-center font-bold text-slate-700 outline-none focus:ring-1 ring-indigo-200" /></td>
-                                   <td className="p-2" align="center"><input type="number" min="0" value={row.vd} onChange={e => updateMatrix(i, 'vd', parseInt(e.target.value)||0)} className="w-12 bg-slate-50 rounded p-1 text-center font-bold text-slate-700 outline-none focus:ring-1 ring-indigo-200" /></td>
-                                   <td className="p-2" align="center"><input type="number" min="0" value={row.vdc} onChange={e => updateMatrix(i, 'vdc', parseInt(e.target.value)||0)} className="w-12 bg-slate-50 rounded p-1 text-center font-bold text-slate-700 outline-none focus:ring-1 ring-indigo-200" /></td>
-                                   <td className="p-2" align="center">
-                                      <button onClick={() => removeMatrixRow(i)} className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4"/></button>
-                                   </td>
-                                 </tr>
-                               ))}
-                            </tbody>
-                          </table>
+
+                        <AcademicCard className="overflow-hidden p-0 border-none shadow-2xl relative">
+                          <div className="overflow-x-auto w-full custom-scrollbar pb-2">
+                             <div className="min-w-[800px]">
+                                <table className="w-full text-left border-collapse">
+                                  <thead>
+                                    <tr className="bg-slate-800 text-white font-serif tracking-tight">
+                                      <th className="px-6 py-5 font-bold text-sm">Nội dung / Chủ đề</th>
+                                      <th className="px-4 py-5 font-bold text-sm text-center">Nhận biết</th>
+                                      <th className="px-4 py-5 font-bold text-sm text-center">Thông hiểu</th>
+                                      <th className="px-4 py-5 font-bold text-sm text-center">Vận dụng</th>
+                                      <th className="px-4 py-5 font-bold text-sm text-center">VD Cao</th>
+                                      <th className="px-6 py-5 font-bold text-sm text-center w-16"></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {examData.matrix.map((row: any, idx: number) => (
+                                      <tr key={idx} className="hover:bg-blue-50/30 transition-colors group">
+                                        <td className="px-6 py-4">
+                                          <input 
+                                            type="text" 
+                                            value={row.topic} 
+                                            onChange={(e) => updateMatrix(idx, 'topic', e.target.value)}
+                                            placeholder="Tên chủ đề hoặc bài học..."
+                                            className="w-full bg-transparent border-none outline-none font-bold text-slate-700 placeholder:text-slate-300 focus:text-blue-600 transition-colors"
+                                          />
+                                        </td>
+                                        {[
+                                          { field: 'nb', color: 'bg-white text-black font-bold ring-emerald-200 focus:ring-emerald-400' },
+                                          { field: 'th', color: 'bg-blue-50 text-blue-700 ring-blue-200 focus:ring-blue-400' },
+                                          { field: 'vd', color: 'bg-amber-50 text-amber-700 ring-amber-200 focus:ring-amber-400' },
+                                          { field: 'vdc', color: 'bg-rose-50 text-rose-700 ring-rose-200 focus:ring-rose-400' }
+                                        ].map((col) => (
+                                          <td key={col.field} className="px-4 py-4">
+                                            <div className="flex items-center justify-center">
+                                              <input 
+                                                type="number" 
+                                                value={row[col.field] === 0 ? '' : row[col.field]} 
+                                                onChange={(e) => updateMatrix(idx, col.field, parseInt(e.target.value) || 0)}
+                                                className={`w-14 text-center rounded-xl py-2 font-black text-sm outline-none transition-all ring-1 focus:ring-2 focus:bg-white ${col.color}`}
+                                                placeholder="0"
+                                              />
+                                            </div>
+                                          </td>
+                                        ))}
+                                        <td className="px-6 py-4 text-center">
+                                          <button 
+                                            onClick={() => removeMatrixRow(idx)}
+                                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr className="bg-slate-50/80 font-bold backdrop-blur-sm border-t border-slate-200">
+                                      <td className="px-6 py-5 text-blue-600 font-serif text-lg">Tổng số câu</td>
+                                      {['nb', 'th', 'vd', 'vdc'].map(field => (
+                                        <td key={field} className="px-4 py-5 text-center">
+                                          <div className="inline-block px-4 py-1.5 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-900 font-black text-base">
+                                            {examData.matrix.reduce((sum: number, row: any) => sum + (row[field] || 0), 0)}
+                                          </div>
+                                        </td>
+                                      ))}
+                                      <td></td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                             </div>
+                          </div>
+                        </AcademicCard>
+
+                        <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 mt-10 shadow-2xl shadow-blue-600/20">
+                           <div className="space-y-2">
+                              <h3 className="text-2xl font-serif font-bold tracking-tight">Tổng quan Ma trận</h3>
+                              <p className="text-blue-100 text-sm font-medium">Bạn đã phân bổ tổng cộng <span className="text-white text-lg font-black underline underline-offset-4 decoration-blue-300">{examData.matrix.reduce((sum: number, row: any) => sum + (row.nb||0) + (row.th||0) + (row.vd||0) + (row.vdc||0), 0)}</span> câu hỏi.</p>
+                           </div>
+                           <button 
+                             onClick={() => setWizardStep(3)}
+                             className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                           >
+                             Vào phần Đặc tả AI
+                           </button>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {wizardStep === 3 && (
-                    <div className="flex-1 overflow-auto p-6 md:p-8 custom-scrollbar animate-in slide-in-from-right-4">
-                       <div className="max-w-4xl mx-auto space-y-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-                        <div className="text-center pb-4 border-b border-slate-100 flex flex-col md:flex-row items-center gap-4 text-left">
-                          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shrink-0">
-                            <Sparkles className="w-6 h-6" />
+                    <div className="flex-1 overflow-auto p-8 lg:p-16 custom-scrollbar animate-in fade-in slide-in-from-right-8 duration-700">
+                       <div className="max-w-4xl mx-auto space-y-10 bg-white p-10 lg:p-14 rounded-[3rem] shadow-2xl border border-slate-100 text-left relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full translate-x-10 -translate-y-10"></div>
+                        
+                        <div className="flex items-center gap-6 pb-10 border-b border-slate-100 mb-10">
+                          <div className="w-16 h-16 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-blue-600/30 shrink-0 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+                            <Sparkles className="w-8 h-8" />
                           </div>
                           <div>
-                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">3. Bảng đặc tả & Sinh đề AI</h2>
-                            <p className="text-slate-500 text-xs mt-1">Thiết lập đặc tả và yêu cầu AI sinh bộ câu hỏi bám sát Ma trận.</p>
+                            <h2 className="text-3xl font-serif font-bold text-slate-900 tracking-tight leading-tight">3. Sinh đề Thông minh</h2>
+                            <p className="text-slate-500 text-sm mt-1 max-w-md">Gemini AI sẽ dựa trên ma trận và đặc tả của bạn để xây dựng bộ câu hỏi chuẩn hóa nhất.</p>
                           </div>
                         </div>
-                        <div className="space-y-6 text-left">
+
+                        <div className="space-y-10">
                           <div>
-                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Mô tả đặc tả / Yêu cầu mở rộng:</label>
+                            <div className="flex items-center justify-between mb-4">
+                               <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Nội dung Đặc tả chi tiết:</label>
+                               <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase">AI Recommended</span>
+                            </div>
                             <textarea 
                               value={aiPrompt}
                               onChange={(e) => setAiPrompt(e.target.value)}
-                              placeholder="Nhập nội dung bảng đặc tả chi tiết..."
-                              className="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 min-h-[120px] outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all resize-none shadow-inner"
+                              placeholder="Ví dụ: Đề thi học kỳ 1, khối 9. Tập trung vào lập trình Scratch: biến số, danh sách và vẽ hình cơ bản. Bao gồm 10 câu trắc nghiệm và 2 câu tự luận thực hành..."
+                              className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-3xl p-8 text-sm text-slate-700 min-h-[220px] outline-none focus:ring-8 focus:ring-blue-600/5 focus:border-blue-600 transition-all resize-none shadow-inner placeholder:text-slate-300 font-medium"
                             ></textarea>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                            <div>
-                               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Mức độ khó chung:</label>
-                               <div className="grid grid-cols-3 gap-2">
-                                 <DifficultyBtn label="Dễ" active={aiDifficulty === 'Easy'} onClick={() => setAiDifficulty('Easy')} />
-                                 <DifficultyBtn label="Vừa" active={aiDifficulty === 'Medium'} onClick={() => setAiDifficulty('Medium')} />
-                                 <DifficultyBtn label="Khó" active={aiDifficulty === 'Hard'} onClick={() => setAiDifficulty('Hard')} />
-                               </div>
+                          
+                          <div className="grid grid-cols-2 gap-10 items-end">
+                            <div className="space-y-6">
+                               <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Mức độ Thử thách:</label>
+                               <div className="grid grid-cols-3 gap-3">
+                                 <DifficultyBtn label="A (Dễ)" active={aiDifficulty === 'Easy'} onClick={() => setAiDifficulty('Easy')} />
+                                 <DifficultyBtn label="B (Vừa)" active={aiDifficulty === 'Medium'} onClick={() => setAiDifficulty('Medium')} />
+                                 <DifficultyBtn label="C (Khó)" active={aiDifficulty === 'Hard'} onClick={() => setAiDifficulty('Hard')} />
+                                </div>
                             </div>
                             <button 
                               onClick={handleGenerateAI}
-                              disabled={isGenerating}
-                              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-800 text-white py-3 rounded-xl font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-3 disabled:opacity-70 transition-all transform hover:-translate-y-1"
+                              disabled={isGenerating || !aiPrompt.trim()}
+                              className="w-full py-6 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-[0_20px_50px_rgba(37,99,235,0.3)] flex items-center justify-center gap-4 disabled:opacity-50 transition-all hover:bg-blue-700 active:scale-95 group relative overflow-hidden"
                             >
-                               {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                               {isGenerating ? "AI Đang xử lý..." : "Sinh Đề bằng AI"}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                              {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+                              <span>{isGenerating ? "Hệ thống đang sinh dữ liệu..." : "Bắt đầu Sinh đề với AI"}</span>
                             </button>
                           </div>
                         </div>
-                      </div>
+                       </div>
                     </div>
                   )}
 
                   {wizardStep === 4 && (
-                    <div className="flex-1 flex overflow-hidden animate-in fade-in bg-slate-50">
-                      {/* Editor Sub-Header (JSON vs Visual Toggle) */}
-                      <div className="absolute top-[88px] left-0 right-0 h-14 bg-slate-100 flex items-center justify-center gap-2 border-b border-slate-200 z-10 shadow-sm">
-                         <button 
-                            onClick={() => setJsonEditMode(false)}
-                            className={`px-6 py-1.5 rounded-lg font-bold text-sm transition-all ${!jsonEditMode ? 'bg-white shadow-sm text-indigo-600 ring-1 ring-slate-200' : 'text-slate-500 hover:bg-slate-200'}`}
-                         >Giao diện (Visual)</button>
-                         <button 
-                            onClick={() => setJsonEditMode(true)}
-                            className={`px-6 py-1.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${jsonEditMode ? 'bg-indigo-600 shadow-sm text-white' : 'text-slate-500 hover:bg-slate-200'}`}
-                         >
-                            Mã nguồn (JSON)
-                            {jsonEditMode && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>}
-                         </button>
-                      </div>
+                    <div className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-slate-50 animate-in fade-in slide-in-from-right-12 duration-1000">
+                       <div className="flex-1 overflow-auto p-10 lg:p-16 custom-scrollbar">
+                          <div className="max-w-4xl mx-auto space-y-12">
+                             <div className="flex items-center justify-between bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50">
+                                <div className="flex items-center gap-5">
+                                   <div className="w-12 h-12 bg-white text-emerald-600 rounded-2xl flex items-center justify-center">
+                                      <CheckCircle2 className="w-6 h-6" />
+                                   </div>
+                                   <div>
+                                      <h2 className="text-2xl font-serif font-bold text-slate-900 leading-tight">Hoàn tất Đề thi</h2>
+                                      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Review & Finalize</p>
+                                   </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                   <button 
+                                     onClick={() => {
+                                       if (!jsonEditMode) setRawJsonContent(JSON.stringify(examData.sections, null, 2));
+                                       else handleSaveParsedJson();
+                                       setJsonEditMode(!jsonEditMode);
+                                     }}
+                                     className={`px-6 py-3 rounded-2xl font-bold text-xs transition-all flex items-center gap-2 ${jsonEditMode ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                   >
+                                     {jsonEditMode ? <Save className="w-4 h-4"/> : <Code className="w-4 h-4"/>}
+                                     {jsonEditMode ? 'Áp dụng Thay đổi' : 'Sửa JSON Trực tiếp'}
+                                   </button>
+                                </div>
+                             </div>
 
-                      {/* Workspace content starts below the sub-header */}
-                      <div className="w-full h-full pt-14 flex">
-                         {jsonEditMode ? (
-                            <section className="flex-1 flex flex-col p-8 bg-slate-900 custom-scrollbar overflow-hidden">
-                                <div className="max-w-5xl mx-auto w-full h-full flex flex-col space-y-4">
-                                   <div className="flex items-center justify-between text-slate-300">
-                                      <p className="text-sm font-medium">Bạn có thể sửa trực tiếp cấu trúc JSON nếu AI trả về sai định dạng.</p>
-                                      <button 
-                                        onClick={handleSaveParsedJson}
-                                        className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-bold hover:bg-emerald-600 transition-colors shadow-lg flex items-center gap-2 text-sm"
-                                      >
-                                         <Check className="w-4 h-4"/>
-                                         Cập nhật Dữ liệu
-                                      </button>
+                             {jsonEditMode ? (
+                                <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-800">
+                                   <div className="bg-slate-800/80 px-8 py-4 border-b border-white/5 flex items-center gap-3">
+                                      <div className="flex gap-1.5">
+                                         <div className="w-3 h-3 rounded-full bg-rose-500/80 shadow-lg shadow-rose-500/20"></div>
+                                         <div className="w-3 h-3 rounded-full bg-amber-500/80 shadow-lg shadow-amber-500/20"></div>
+                                         <div className="w-3 h-3 rounded-full bg-white0/80 shadow-lg shadow-emerald-500/20"></div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Source Code Editor</span>
                                    </div>
                                    <textarea 
-                                      value={rawJsonContent}
-                                      onChange={(e) => setRawJsonContent(e.target.value)}
-                                      className="flex-1 w-full bg-[#0d1117] text-[#c9d1d9] border border-slate-700 rounded-xl p-6 font-mono text-sm outline-none focus:border-emerald-500/50 resize-none shadow-inner"
-                                      spellCheck={false}
+                                     value={rawJsonContent}
+                                     onChange={(e) => setRawJsonContent(e.target.value)}
+                                     className="w-full h-[700px] bg-transparent text-emerald-400 p-10 font-mono text-sm outline-none resize-none scrollbar-invert"
+                                     spellCheck={false}
                                    />
                                 </div>
-                            </section>
-                         ) : (
-                            <section className="flex-1 overflow-auto p-4 md:p-6 custom-scrollbar pb-24">
-                               <div className="max-w-4xl mx-auto space-y-6">
-                                  {examData.sections?.length > 0 ? examData.sections.map((sec: any, sIdx: number) => (
-                                     <div key={sIdx} className="space-y-3">
-                                       <SectionTitle>{sec.title}</SectionTitle>
-                                       <div className="grid grid-cols-1 gap-3">
-                                          {sec.questions?.map((q: any, qIdx: number) => (
-                                             <QuestionCard key={qIdx} q={q} type={sec.type} number={q.id || qIdx + 1} />
-                                          ))}
+                             ) : (
+                                <div className="space-y-12 pb-20">
+                                   {examData.sections?.map((sec: any, sIdx: number) => (
+                                      <div key={sIdx} className="space-y-8">
+                                         <div className="flex items-center gap-6">
+                                            <div className="h-10 px-6 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-[10px] uppercase tracking-widest shadow-2xl">
+                                               {sec.title}
+                                            </div>
+                                            <div className="flex-1 h-[2px] bg-slate-100 rounded-full"></div>
+                                         </div>
+                                         
+                                         {sec.type === 'multiple_choice' && sec.questions?.length > 0 && (
+                                            <div className="mb-6 px-4">
+                                               <p className="italic mb-2 text-sm text-center">Em hãy chọn đáp án đúng nhất và điền vào bảng trả lời dưới đây:</p>
+                                               <div className="w-full border-[1.5px] border-black overflow-hidden font-serif">
+                                                 <table className="w-full border-collapse text-center table-fixed">
+                                                   <tbody>
+                                                     <tr className="border-b-[1.5px] border-black">
+                                                       <td className="border-r-[1.5px] border-black font-bold p-2 bg-slate-50 w-20">Câu</td>
+                                                       {sec.questions.map((_:any, i:number) => (
+                                                         <td key={"h-"+i} className="border-r-[1.5px] last:border-r-0 border-black p-2 text-sm font-bold">{i+1}</td>
+                                                       ))}
+                                                     </tr>
+                                                     <tr className="h-10">
+                                                       <td className="border-r-[1.5px] border-black font-bold p-2 bg-slate-50">Đáp án</td>
+                                                       {sec.questions.map((_:any, i:number) => (
+                                                         <td key={"a-"+i} className="border-r-[1.5px] last:border-r-0 border-black p-2"></td>
+                                                       ))}
+                                                     </tr>
+                                                   </tbody>
+                                                 </table>
+                                               </div>
+                                            </div>
+                                         )}
+
+                                         <div className="grid grid-cols-1 gap-8">
+                                            {sec.questions?.map((q: any, qIdx: number) => (
+                                              <QuestionCard key={`${sIdx}-${qIdx}`} q={q} type={sec.type} number={qIdx + 1} />
+                                            ))}
+                                         </div>
+                                      </div>
+                                   ))}
+                                   
+                                   {(!examData.sections || examData.sections.length === 0) && (
+                                     <div className="bg-white p-24 rounded-[3.5rem] text-center border-2 border-dashed border-slate-100 shadow-inner">
+                                       <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8">
+                                          <Sparkles className="w-12 h-12 text-slate-200" />
                                        </div>
+                                       <h3 className="text-xl font-bold text-slate-400 mb-2 font-serif">Chưa có nội dung Đề thi</h3>
+                                       <p className="text-slate-300 text-sm max-w-xs mx-auto leading-relaxed">Hãy sử dụng bảng đặc tả ở bước 3 để trợ lý AI soạn nội dung cho bạn.</p>
                                      </div>
-                                  )) : (
-                                    <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
-                                      <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                      <h3 className="text-lg font-bold text-slate-700 mb-2">Chưa có dữ liệu câu hỏi</h3>
-                                      <p>Vui lòng quay lại Bước 3 để sử dụng AI Sinh đề dựa vào Ma trận.</p>
-                                      <button onClick={() => setWizardStep(3)} className="mt-6 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-bold hover:bg-indigo-100 transition-colors">Quay lại Bước 3</button>
-                                    </div>
-                                  )}
-                               </div>
-                            </section>
-                         )}
+                                   )}
+                                </div>
+                             )}
+                          </div>
+                       </div>
 
-                         {/* Print/Word Preview Pane (A4) - ALWAYS visible in Step 4 on large screens */}
-                         <section className="w-[450px] lg:w-[500px] xl:w-[600px] bg-[#E2E8F0] p-8 hidden md:flex flex-col border-l border-slate-300 relative shadow-2xl">
-                            <div className="flex items-center justify-between mb-4">
-                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Xem trước Bản in (A4)</span>
-                            </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar flex justify-center items-start pt-4">
-                               <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] mb-10 overflow-hidden" style={{ width: '210mm', minHeight: '297mm', paddingLeft: '30mm', paddingRight: '20mm', paddingTop: '20mm', paddingBottom: '20mm', transform: 'scale(0.65)', transformOrigin: 'top center' }}>
-                                  <div className="font-serif leading-tight text-slate-900" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '14pt' }}>
-                                     <div className="flex justify-between border-b pb-4 mb-8">
-                                        <div className="text-center">
-                                          <div className="uppercase font-bold">{examData.headerConfig.school}</div>
-                                          <div className="font-bold">{examData.headerConfig.class}</div>
-                                        </div>
-                                        <div className="text-center font-bold">
-                                          <div>{examData.headerConfig.subject}</div>
-                                          <div className="font-normal italic text-[12pt]">{examData.headerConfig.time}</div>
-                                        </div>
-                                     </div>
+                       {/* Sidebar Panel: Final Actions */}
+                       <div className="w-full lg:w-[340px] bg-white border-l border-slate-100 flex flex-col shadow-[0_0_80px_rgba(0,0,0,0.05)] z-20 shrink-0 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+                          
+                          <div className="p-10 border-b border-slate-50 flex items-center justify-between relative z-10">
+                             <div className="flex items-center gap-4">
+                                <div className="p-3 bg-slate-900 text-indigo-400 rounded-2xl shadow-xl">
+                                   <Eye className="w-5 h-5" />
+                                </div>
+                                <div>
+                                   <span className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] block leading-none mb-1">Preview</span>
+                                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Bản in mô phỏng</span>
+                                </div>
+                             </div>
+                          </div>
+
+                          <div className="flex-1 overflow-auto p-10 bg-slate-50/30 space-y-10 custom-scrollbar relative z-10">
+                             {/* Paper Preview Card */}
+                             <div className="bg-white aspect-[21/29.7] shadow-[0_30px_70px_rgba(0,0,0,0.1)] rounded-md p-10 origin-top transform transition-all hover:scale-[1.03] cursor-zoom-in relative group overflow-hidden border border-slate-100">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="h-full bg-white p-4 text-[4.5px] text-black pointer-events-none font-serif leading-relaxed overflow-hidden">
+                                   {/* Header Table Simulate */}
+                                   <table className="w-full table-fixed border-collapse mb-4">
+                                      <tbody>
+                                         <tr>
+                                            <td className="w-1/2 text-center align-top pr-1">
+                                               <p className="font-bold uppercase tracking-tighter text-[5px]">{examData.headerConfig.school}</p>
+                                               <p>Lớp: {examData.headerConfig.class}</p>
+                                               <p>Họ và tên: ...............................</p>
+                                            </td>
+                                            <td className="w-1/2 text-center align-top pl-1">
+                                               <p className="font-bold uppercase tracking-tighter text-[5px]">{examData.headerConfig.examTitle}</p>
+                                               <p>Môn: {examData.headerConfig.subject}</p>
+                                               <p className="italic">Thời gian làm bài: 45 Phút</p>
+                                            </td>
+                                         </tr>
+                                      </tbody>
+                                   </table>
+
+                                   {/* Score Table Simulate */}
+                                   <table className="w-full table-fixed border-collapse border border-black mb-6">
+                                      <tbody>
+                                         <tr>
+                                            <td className="w-1/4 border border-black align-top text-center p-1.5 h-12">
+                                               <p className="font-bold italic underline">Điểm</p>
+                                            </td>
+                                            <td className="w-3/4 border border-black align-top p-1.5 h-12">
+                                               <p className="italic underline opacity-80">Lời nhận xét của thầy (cô) giáo:</p>
+                                            </td>
+                                         </tr>
+                                      </tbody>
+                                   </table>
+
+                                   <p className="text-center font-bold underline mb-4 tracking-widest text-[6px]">ĐỀ BÀI</p>
+
+                                   <div className="space-y-4">
+                                      <p className="font-bold">I. PHẦN TRẮC NGHIỆM NHIỀU LỰA CHỌN</p>
+                                      <table className="w-full border-collapse border border-slate-300 text-center mb-4">
+                                         <tbody>
+                                            <tr className="bg-slate-50"><td className="border border-slate-300 font-bold p-1">Câu</td><td className="border border-slate-300 font-bold p-1 w-6">1</td><td className="border border-slate-300 font-bold p-1 w-6">2</td><td className="border border-slate-300 font-bold p-1 w-6">3</td></tr>
+                                            <tr><td className="border border-slate-300 font-bold p-1">Đáp án</td><td className="border border-slate-300 p-1"></td><td className="border border-slate-300 p-1"></td><td className="border border-slate-300 p-1"></td></tr>
+                                         </tbody>
+                                      </table>
+                                      <div className="space-y-2">
+                                         <p>Câu 1: Câu hỏi mẫu xuất hiện ở đây...</p>
+                                         <div className="grid grid-cols-4 gap-1">
+                                            <p><span className="font-bold">A.</span> Đáp án</p>
+                                            <p><span className="font-bold">B.</span> Đáp án</p>
+                                            <p><span className="font-bold">C.</span> Đáp án</p>
+                                            <p><span className="font-bold">D.</span> Đáp án</p>
+                                         </div>
+                                      </div>
+                                   </div>
+                                </div>
+                             </div>
+
+                             <div className="p-6 bg-slate-800 rounded-[2rem] text-white shadow-2xl relative overflow-visible group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-700"></div>
+                                <div className="relative z-10">
+                                   <div className="flex items-center gap-4 mb-4">
+                                      <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md"><Download className="w-4 h-4 text-sky-300"/></div>
+                                      <div>
+                                         <span className="font-serif font-bold text-base block leading-none mb-1">Xuất bản Đề thi</span>
+                                      </div>
+                                   </div>
+                                   
+                                   <div className="relative group/dropdown mt-6">
+                                     <button 
+                                       className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs hover:bg-blue-500 transition-all flex items-center justify-between px-5 shadow-[0_10px_20px_rgba(37,99,235,0.2)] active:scale-95 disabled:opacity-50"
+                                     >
+                                       <div className="flex items-center gap-2">
+                                          {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Download className="w-4 h-4"/>}
+                                          <span>Tải xuống đề thi...</span>
+                                       </div>
+                                       <ChevronDown className="w-4 h-4 opacity-70 group-hover/dropdown:rotate-180 transition-transform"/>
+                                     </button>
                                      
-                                     <div className="mb-4">{examData.headerConfig.student}</div>
-                                     
-                                     <div className="text-center font-bold text-xl uppercase mb-8 mt-6">
-                                        {examData.headerConfig.examTitle}
+                                     {/* Dropdown Menu */}
+                                     <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-slate-100 opacity-0 invisible group-hover/dropdown:opacity-100 group-hover/dropdown:visible transition-all translate-y-2 group-hover/dropdown:translate-y-0 z-50 overflow-hidden">
+                                        <button onClick={generateWordDoc} disabled={loading} className="w-full text-left px-5 py-4 hover:bg-slate-50 flex items-center gap-3 border-b border-slate-50 group/btn transition-colors">
+                                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover/btn:scale-110 transition-transform"><FileText className="w-4 h-4"/></div>
+                                            <div>
+                                              <p className="text-sm font-bold text-slate-800">Bản in Word (.docx)</p>
+                                              <p className="text-[10px] text-slate-500 font-medium">Định dạng tiêu chuẩn 2026</p>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => {
+                                          const blob = new Blob([JSON.stringify(examData, null, 2)], { type: "application/json" });
+                                          saveAs(blob, "exam-data-backup.json");
+                                        }} className="w-full text-left px-5 py-4 hover:bg-slate-50 flex items-center gap-3 group/btn transition-colors">
+                                            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg group-hover/btn:scale-110 transition-transform"><Database className="w-4 h-4"/></div>
+                                            <div>
+                                              <p className="text-sm font-bold text-slate-800">Dữ liệu thô (.JSON)</p>
+                                              <p className="text-[10px] text-slate-500 font-medium">Lưu trữ máy chủ kỹ thuật</p>
+                                            </div>
+                                        </button>
                                      </div>
+                                   </div>
+                                </div>
+                             </div>
 
-                                     <div className="space-y-6">
-                                        {examData.sections?.map((sec: any, sIdx: number) => (
-                                           <div key={sIdx} className="mb-6">
-                                              <div className="font-bold mb-3">{sec.title}</div>
-                                              <div className="space-y-3">
-                                                 {sec.questions?.map((q: any, qIdx: number) => (
-                                                    <div key={qIdx} className="text-justify leading-relaxed break-inside-avoid">
-                                                       <span className="font-bold">Câu {q.id || qIdx + 1}. </span>
-                                                       <FormattedText text={q.question} />
-
-                                                       {sec.type === 'multiple_choice' && q.options && (
-                                                         <div className="mt-2 pl-8 space-y-1">
-                                                           {q.options.map((o: string, i: number) => (
-                                                              <div key={i} className="flex gap-2">
-                                                                <span className="shrink-0">{String.fromCharCode(65 + i)}.</span>
-                                                                <FormattedText text={String(o).replace(/^[A-D](\.|\)) /, '')} />
-                                                              </div>
-                                                           ))}
-                                                         </div>
-                                                       )}
-
-                                                       {sec.type === 'true_false' && q.statements && (
-                                                         <div className="mt-2 pl-4 space-y-1">
-                                                           {q.statements.map((s: any, i: number) => {
-                                                              let t = String(s.text || '').trim();
-                                                              const prefix = String.fromCharCode(97 + i) + ") ";
-                                                              if (!t.toLowerCase().startsWith(prefix.trim())) t = prefix + t;
-                                                              return <div key={i}><FormattedText text={t} /></div>;
-                                                           })}
-                                                         </div>
-                                                       )}
-
-                                                       {sec.type === 'matching' && q.left && q.right && (
-                                                         <div className="flex justify-between mt-4 pl-4 w-full pr-8">
-                                                            <div className="space-y-2 flex-1 pr-4">
-                                                              <div className="font-bold text-center mb-2">Cột A</div>
-                                                              {q.left.map((l: string, i: number) => {
-                                                                let text = l;
-                                                                if (!text.startsWith(String(i+1))) text = `${i+1}. ${text}`;
-                                                                return <div key={i}><FormattedText text={text} /></div>;
-                                                              })}
-                                                            </div>
-                                                            <div className="space-y-2 flex-1 pl-4 border-l border-slate-100">
-                                                              <div className="font-bold text-center mb-2">Cột B</div>
-                                                              {q.right.map((r: string, i: number) => {
-                                                                const prefix = String.fromCharCode(65 + i) + '. ';
-                                                                let text = r;
-                                                                if (!text.startsWith(String.fromCharCode(65 + i))) text = prefix + text;
-                                                                return <div key={i}><FormattedText text={text} /></div>;
-                                                              })}
-                                                            </div>
-                                                         </div>
-                                                       )}
-
-                                                       {(sec.type === 'essay' || sec.type === 'fill_in_the_blanks') && (
-                                                         <div className="mt-8 mb-4 border-b border-dotted border-slate-400"></div>
-                                                       )}
-                                                    </div>
-                                                 ))}
-                                              </div>
-                                           </div>
-                                        ))}
-                                     </div>
-                                  </div>
-                               </div>
-                            </div>
-                          </section>
-                      </div>
+                             {/* Helper Tip */}
+                             <div className="p-6 border border-slate-200 rounded-3xl bg-white flex items-start gap-4">
+                                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl shrink-0"><AlertCircle className="w-4 h-4"/></div>
+                                <p className="text-[10px] text-slate-500 leading-normal font-medium"><b>Lưu ý:</b> Các khối lệnh Scratch sẽ được hệ thống chuyển đổi tự động thành hình ảnh minh họa độ phân giải cao trong bản in.</p>
+                             </div>
+                          </div>
+                       </div>
                     </div>
                   )}
               </div>
@@ -1145,14 +1442,14 @@ Hãy sinh đề thi áp dụng TẤT CẢ các quy tắc strict JSON và đảm 
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 20, scale: 0.9 }}
                 className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border min-w-[300px] ${
-                  toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+                  toast.type === 'success' ? 'bg-white border-emerald-100 text-emerald-800' :
                   toast.type === 'error' ? 'bg-red-50 border-red-100 text-red-800' :
                   'bg-white border-slate-200 text-slate-800'
                 }`}
               >
                 {toast.type === 'success' && <Check className="w-5 h-5 text-emerald-600" />}
                 {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
-                {toast.type === 'info' && <Sparkles className="w-5 h-5 text-indigo-600" />}
+                {toast.type === 'info' && <Sparkles className="w-5 h-5 text-blue-600" />}
                 <p className="font-bold text-sm tracking-tight">{toast.message}</p>
               </motion.div>
             ))}
@@ -1169,27 +1466,30 @@ function SidebarLink({ icon, label, active, onClick }: { icon: any, label: strin
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center justify-center lg:justify-start gap-4 p-3 rounded-xl transition-all relative group
-        ${active ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 hover:text-slate-900'}`}
+      className={`w-full flex items-center justify-center lg:justify-start gap-4 p-3.5 rounded-2xl transition-all relative group
+        ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'hover:bg-blue-50 text-slate-500 hover:text-blue-600'}`}
     >
-      <div className={active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-900'}>{icon}</div>
-      <span className={`hidden lg:block font-bold text-sm ${active ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-900'}`}>{label}</span>
-      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 rounded-r-full"></div>}
+      <div className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'} transition-colors`}>{icon}</div>
+      <span className={`hidden lg:block font-bold text-sm tracking-tight ${active ? 'text-white' : 'text-slate-500 group-hover:text-blue-600'} transition-colors`}>{label}</span>
+      {active && <motion.div layoutId="activeNav" className="absolute -left-1 w-2 h-8 bg-blue-400 rounded-r-full blur-[1px]" />}
     </button>
   );
 }
 
-function StatCard({ label, value, icon }: { label: string, value: string, icon: any }) {
+function StatCard({ label, value, icon, trend }: { label: string, value: string, icon: any, trend?: string }) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5">
-      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+    <AcademicCard className="p-6 flex items-start gap-6 group">
+      <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:rotate-6 transition-transform duration-500 shadow-inner">
         {icon}
       </div>
-      <div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
-        <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+      <div className="flex-1">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+          {trend && <span className="text-[10px] font-bold text-emerald-500 bg-white px-1.5 py-0.5 rounded uppercase">{trend}</span>}
+        </div>
       </div>
-    </div>
+    </AcademicCard>
   );
 }
 
@@ -1198,13 +1498,16 @@ function WizardStep({ step, current, label }: { step: number, current: number, l
   const active = step <= current;
   const isCurrent = step === current;
   return (
-    <div className={`flex items-center gap-3 transition-all duration-500 ${active ? 'opacity-100' : 'opacity-30'}`}>
-      <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold shadow-md transition-all duration-300 ${completed ? 'bg-emerald-500 text-white scale-90' : isCurrent ? 'bg-indigo-600 text-white ring-4 ring-indigo-100 scale-110' : 'bg-slate-200 text-slate-500'}`}>
-        {completed ? <Check className="w-4 h-4" /> : step}
+    <div className={`flex flex-col items-center gap-2 transition-all duration-700 ${active ? 'opacity-100' : 'opacity-20'}`}>
+      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 
+        ${completed ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 
+          isCurrent ? 'bg-white text-blue-600 ring-2 ring-blue-600 shadow-xl scale-110' : 
+          'bg-slate-100 text-slate-400'}`}>
+        {completed ? <Check className="w-5 h-5 stroke-[3px]" /> : step}
       </div>
-      <div className="hidden lg:block">
-        <span className={`text-xs font-black uppercase tracking-widest block leading-none ${isCurrent ? 'text-indigo-600' : 'text-slate-400'}`}>Bước {step}</span>
-        <span className={`text-sm font-bold ${isCurrent ? 'text-slate-900' : 'text-slate-500'}`}>{label}</span>
+      <div className="hidden md:block text-center">
+        <span className={`text-[10px] font-black uppercase tracking-[0.2em] block mb-0.5 ${isCurrent ? 'text-blue-600' : 'text-slate-400'}`}>Bước {step}</span>
+        <span className={`text-xs font-bold whitespace-nowrap ${isCurrent ? 'text-slate-900' : 'text-slate-500'}`}>{label}</span>
       </div>
     </div>
   );
@@ -1218,7 +1521,7 @@ function EditableField({ label, value, onChange }: { label: string, value: strin
         type="text" 
         value={value} 
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 font-medium outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all shadow-sm"
+        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 font-medium outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all shadow-sm"
       />
     </div>
   );
@@ -1228,74 +1531,82 @@ function DifficultyBtn({ label, active, onClick }: { label: string, active?: boo
   return (
     <button 
       onClick={onClick}
-      className={`w-full py-4 rounded-xl font-bold transition-all border ${active ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'}`}>
+      className={`w-full py-4 rounded-xl font-bold transition-all border ${active ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20 transform scale-[1.02]' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'}`}>
       {label}
     </button>
   );
 }
 
-// Re-designed to handle 5 different strict JSON schemas
 function QuestionCard({ q, type, number }: { q: any, type: string, number: number | string, key?: React.Key }) {
   const typeLabels: Record<string, string> = {
-    multiple_choice: 'Trắc nghiệm (MCQ)',
-    true_false: 'Đúng/Sai',
-    matching: 'Ghép nối',
-    fill_in_the_blanks: 'Điền khuyết',
-    essay: 'Tự luận'
+    multiple_choice: 'Câu hỏi Trắc nghiệm',
+    true_false: 'Câu hỏi Đúng/Sai',
+    matching: 'Câu hỏi Ghép nối',
+    fill_in_the_blanks: 'Câu hỏi Điền khuyết',
+    essay: 'Câu hỏi Tự luận'
   };
 
   const typeColors: Record<string, string> = {
-    multiple_choice: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    true_false: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    matching: 'bg-amber-50 text-amber-600 border-amber-100',
-    fill_in_the_blanks: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100',
-    essay: 'bg-rose-50 text-rose-600 border-rose-100'
+    multiple_choice: 'bg-blue-50 text-blue-700 border-blue-100',
+    true_false: 'bg-white text-black font-bold border-emerald-100',
+    matching: 'bg-amber-50 text-amber-700 border-amber-100',
+    fill_in_the_blanks: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
+    essay: 'bg-rose-50 text-rose-700 border-rose-100'
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 transition-all group relative shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-slate-100 text-slate-800 rounded flex items-center justify-center font-bold text-[11px] ring-1 ring-slate-200">
+    <AcademicCard className="p-8 group relative overflow-visible">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-sm shadow-xl shadow-slate-900/10">
             {number}
           </div>
-          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${typeColors[type] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-            {typeLabels[type] || type}
-          </span>
+          <div>
+            <span className={`text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${typeColors[type] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+              {typeLabels[type] || type}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-           <button className="p-1.5 hover:bg-slate-50 rounded transition-colors text-slate-400 hover:text-indigo-600"><Settings className="w-3.5 h-3.5"/></button>
-           <button className="p-1.5 hover:bg-slate-50 rounded transition-colors text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button>
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+           <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-indigo-600 border border-transparent hover:border-slate-200"><Settings className="w-4 h-4"/></button>
+           <button className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-600 border border-transparent hover:border-rose-200"><Trash2 className="w-4 h-4"/></button>
         </div>
       </div>
       
-      <p className="text-slate-800 font-semibold mb-3 leading-snug text-sm">{q.question}</p>
+      <div className="text-slate-900 font-bold text-lg mb-6 leading-relaxed">
+        <FormattedText text={q.question} />
+      </div>
 
       {/* Multiple Choice Options */}
-      {type === 'multiple_choice' && q.options && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      {type === 'multiple_choice' && q.options && (() => {
+        const isShort = q.options.join(' ').length < 50;
+        const gridCols = isShort && q.options.length === 4 ? 'grid-cols-1 md:grid-cols-4' : 'grid-cols-2';
+        return (
+         <div className={`grid ${gridCols} gap-4`}>
           {q.options.map((o: string, i: number) => {
              const prefix = String.fromCharCode(65 + i);
-             const hasPrefix = o.startsWith(prefix + '.') || o.startsWith(prefix + ')');
-             const displayText = hasPrefix ? o : `${prefix}. ${o}`;
-             const isAnswer = q.answer && o.startsWith(q.answer);
+             const isAnswer = q.answer === prefix || (typeof q.answer === 'string' && q.answer.startsWith(prefix));
              return (
-               <div key={i} className={`flex items-start gap-2 text-xs text-slate-700 bg-white p-2 rounded-lg border transition-all ${isAnswer ? 'border-emerald-300 bg-emerald-50/20 ring-1 ring-emerald-300' : 'border-slate-100'}`}>
-                 <span className="font-medium text-slate-500">{prefix}.</span>
-                 <span className="flex-1">{o.replace(new RegExp(`^${prefix}[.)]\\s*`), '')}</span>
+               <div key={i} className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all ${isAnswer ? 'bg-white border-emerald-500 shadow-lg shadow-emerald-500/10' : 'bg-slate-50/50 border-slate-100 hover:border-indigo-200'}`}>
+                 <span className={`font-black text-sm ${isAnswer ? 'text-black font-bold' : 'text-slate-900'}`}>{prefix}.</span>
+                 <span className={`text-sm font-medium ${isAnswer ? 'text-emerald-900' : 'text-slate-700'}`}>{String(o).replace(/^[A-D](\.|\)) /, '')}</span>
                </div>
              )
           })}
         </div>
-      )}
+        )
+      })()}
 
       {/* True / False Statements */}
       {type === 'true_false' && q.statements && (
-         <div className="space-y-1.5">
+         <div className="space-y-3">
             {q.statements.map((st: any, i: number) => (
-               <div key={i} className="flex items-center justify-between text-xs bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-                 <span className="text-slate-700">{st.text}</span>
-                 <span className={`font-bold px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider ${st.answer ? 'text-emerald-700' : 'text-rose-700'}`}>
+               <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border-2 border-slate-100 hover:border-indigo-100 transition-all">
+                 <div className="flex items-center gap-3">
+                   <span className="w-6 h-6 bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center text-[10px] font-black">{String.fromCharCode(97 + i)}</span>
+                   <span className="text-sm font-bold text-slate-700">{st.text}</span>
+                 </div>
+                 <span className={`font-black px-4 py-1.5 rounded-xl text-[10px] uppercase tracking-widest border-2 ${st.answer ? 'bg-white border-emerald-500 text-black font-bold' : 'bg-rose-50 border-rose-500 text-rose-700'}`}>
                    {st.answer ? 'Đúng' : 'Sai'}
                  </span>
                </div>
@@ -1305,17 +1616,27 @@ function QuestionCard({ q, type, number }: { q: any, type: string, number: numbe
 
       {/* Matching Pairs */}
       {type === 'matching' && q.left && q.right && (
-         <div className="flex gap-4">
-            <div className="flex-1 space-y-2">
-               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Cột A</div>
-               {q.left.map((l: string, i: number) => <div key={i} className="text-sm bg-white p-3 rounded-xl border border-slate-200 font-medium text-slate-700">{l}</div>)}
+         <div className="grid grid-cols-2 gap-8 relative">
+            <div className="space-y-3">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 pl-2 text-center">Cột A</p>
+               {q.left.map((l: string, i: number) => (
+                 <div key={i} className="p-4 bg-white rounded-2xl border-2 border-slate-100 hover:border-indigo-200 transition-all shadow-sm flex items-center gap-3">
+                   <span className="font-black text-xs text-indigo-600">{i+1}.</span>
+                   <span className="text-sm font-bold text-slate-700">{l}</span>
+                 </div>
+               ))}
             </div>
-            <div className="flex-1 space-y-2">
-               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2">Cột B</div>
-               {q.right.map((r: string, i: number) => <div key={i} className="text-sm bg-white p-3 rounded-xl border border-slate-200 font-medium text-slate-700">{r}</div>)}
+            <div className="space-y-3">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 pl-2 text-center">Cột B</p>
+               {q.right.map((r: string, i: number) => (
+                 <div key={i} className="p-4 bg-white rounded-2xl border-2 border-slate-100 hover:border-indigo-200 transition-all shadow-sm flex items-center gap-3">
+                   <span className="font-black text-xs text-indigo-600">{String.fromCharCode(65 + i)}.</span>
+                   <span className="text-sm font-bold text-slate-700">{r}</span>
+                 </div>
+               ))}
             </div>
          </div>
       )}
-    </div>
+    </AcademicCard>
   );
 }
