@@ -321,30 +321,43 @@ export const generateStep1Matrix = async (
        - **Vận dụng:** Tổng điểm (Trắc nghiệm + Tự luận) mức Vận dụng PHẢI BẰNG **3.0 điểm (30%)**.
   `;
 
-  // Strict HTML Template for the Header
+  // Strict HTML Template for the Header (exactly 22 columns corresponding to the sample matrix)
   const headerStructure = `
     <thead>
-        <tr>
-            <th rowspan="3" style="width:5%">STT</th>
-            <th rowspan="3" style="width:15%">Chủ đề</th>
-            <th rowspan="3" style="width:20%">Nội dung/Đơn vị kiến thức</th>
-            <th colspan="15">Mức độ nhận thức</th>
-            <th rowspan="3" style="width:5%">Tổng</th>
-            <th rowspan="3" style="width:5%">Tổng điểm</th>
+        <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+            <th rowspan="3" style="padding:4px; border:1px solid #000; width:3%;">TT</th>
+            <th rowspan="3" style="padding:4px; border:1px solid #000; width:15%;">Chủ đề</th>
+            <th rowspan="3" style="padding:4px; border:1px solid #000; width:15%;">Nội dung/Đơn vị kiến thức</th>
+            <th colspan="15" style="padding:4px; border:1px solid #000;">Mức độ nhận thức</th>
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Tổng</th>
+            <th rowspan="3" style="padding:4px; border:1px solid #000; width:6%;">Tỉ lệ % điểm</th>
         </tr>
-        <tr>
-            <th colspan="3">Dạng I (Trắc nghiệm)</th>
-            <th colspan="3">Dạng II (Đúng/Sai)</th>
-            <th colspan="3">Dạng III (Ghép nối)</th>
-            <th colspan="3">Dạng IV (Điền khuyết)</th>
-            <th colspan="3">Dạng V (Tự luận)</th>
+        <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng I<br>(Trắc nghiệm)</th>
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng II<br>(Đúng/Sai)</th>
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng III<br>(Ghép nối)</th>
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng IV<br>(Điền khuyết)</th>
+            <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng V<br>(Tự luận)</th>
+            <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">Biết</th>
+            <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">Hiểu</th>
+            <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">VD</th>
         </tr>
-        <tr>
-            <th>Biết</th><th>Hiểu</th><th>VD</th>
-            <th>Biết</th><th>Hiểu</th><th>VD</th>
-            <th>Biết</th><th>Hiểu</th><th>VD</th>
-            <th>Biết</th><th>Hiểu</th><th>VD</th>
-            <th>Biết</th><th>Hiểu</th><th>VD</th>
+        <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+            <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
         </tr>
     </thead>
   `;
@@ -390,16 +403,16 @@ export const generateStep1Matrix = async (
   2. **CẤU TRÚC BẢNG BẮT BUỘC:**
      Sử dụng chính xác cấu trúc Header sau:
      ${headerStructure}
-  3. **NỘI DUNG:**
+  3. **NỘI DUNG VÀ TỔNG CỘT (QUY TẮC CỰC KỲ NGHIÊM NGẶT):**
      - Merge cells (rowspan) cho cột "Chủ đề".
-     - Phân phối các mã câu hỏi (VD: C1, C2, C13(4ý), C17(1.0đ)) vào đúng ô mức độ.
-     - **QUAN TRỌNG:** Với câu tự luận, hãy ghi rõ điểm số bên cạnh mã câu. Ví dụ: C15(1.0đ).
-     - **Tính toán:** Cột "Tổng" là tổng số câu (tính theo đơn vị câu lớn). Cột "Tổng điểm" tính theo cơ chế điểm số.
+     - Phân phối các mã câu hỏi (VD: C1, C2, C13(4ý), C15(1.5đ)) vào đúng ô mức độ nhận thức (15 cột tương ứng với các dạng).
+     - **Tính toán 3 cột Tổng (Biết, Hiểu, VD):** Đối với mỗi hàng, tính tổng số lượng câu hỏi thuộc mức Biết, Hiểu, VD xuất hiện trên toàn bộ các câu của hàng đó. Điền chính xác con số này vào 3 cột tương ứng nằm dưới nhóm cột "Tổng".
+     - **Tính toán cột "Tỉ lệ % điểm":** Tính toán số điểm mà hàng đó mang lại (Trắc nghiệm Dạng I: 0.25đ/câu; Dạng II, III, IV: 1.0đ/câu; Tự luận Dạng V theo phân phối tự luận). Đổi tổng điểm của hàng đó thành tỉ lệ phần trăm tương ứng trên tổng 10 điểm toàn bài (Ví dụ: tổng điểm hàng là 1.5đ thì ghi "15%"). Điền chính xác phần trăm này vào cột "Tỉ lệ % điểm".
   4. **FOOTER (TỔNG KẾT) - BẮT BUỘC:**
      Phải tính toán và hiển thị chính xác các số liệu sau ở cuối bảng (trong thẻ tfoot hoặc row cuối):
-     - **Tỉ lệ % điểm:** Biết ...% - Hiểu ...% - Vận dụng 30%.
+     - **Tỉ lệ % điểm:** Biết ...% - Hiểu ...% - Vận dụng 30%. Tổng cộng tất cả là 100%.
      - **Tổng điểm:** Trắc nghiệm 7.0 - Tự luận 3.0.
-  5. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%;">.
+  5. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman', serif; font-size:11pt;">.
   `;
 
   try {
@@ -510,7 +523,7 @@ export const generateStep2Specs = async (
      - Điền CHÍNH XÁC mã câu hỏi (C1, C2...) lấy từ Ma trận sang.
   5. **FOOTER (TỔNG KẾT):**
      Hiển thị tổng số câu và phân phối điểm số (Trắc nghiệm 7.0 - Tự luận 3.0).
-  6. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%;">.
+  6. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman', serif; font-size:11pt;">.
   `;
 
   try {

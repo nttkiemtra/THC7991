@@ -50,6 +50,7 @@ import {
   Split,
   Code,
   Calculator,
+  RefreshCw,
   HelpCircle,
   Archive,
   Plus,
@@ -102,6 +103,480 @@ import * as XLSX from "xlsx";
 import JSZip from "jszip";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const SAMPLE_MATRIX_HTML = `<table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman'; font-size:11pt;">
+  <thead>
+    <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+      <th rowspan="3" style="padding:4px; border:1px solid #000; width:3%;">TT</th>
+      <th rowspan="3" style="padding:4px; border:1px solid #000; width:15%;">Chủ đề</th>
+      <th rowspan="3" style="padding:4px; border:1px solid #000; width:15%;">Nội dung/Đơn vị kiến thức</th>
+      <th colspan="15" style="padding:4px; border:1px solid #000;">Mức độ nhận thức</th>
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Tổng</th>
+      <th rowspan="3" style="padding:4px; border:1px solid #000; width:6%;">Tỉ lệ % điểm</th>
+    </tr>
+    <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng I<br>(Trắc nghiệm)</th>
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng II<br>(Đúng/Sai)</th>
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng III<br>(Ghép nối)</th>
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng IV<br>(Điền khuyết)</th>
+      <th colspan="3" style="padding:4px; border:1px solid #000;">Dạng V<br>(Tự luận)</th>
+      <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">Biết</th>
+      <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">Hiểu</th>
+      <th rowspan="2" style="padding:4px; border:1px solid #000; width:3%;">VD</th>
+    </tr>
+    <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Biết</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">Hiểu</th>
+      <th style="padding:3px; border:1px solid #000; width:3.5%;">VD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4" style="text-align:center; padding:4px; border:1px solid #000; vertical-align:middle;">1</td>
+      <td rowspan="4" style="padding:4px; border:1px solid #000; font-weight:bold; vertical-align:middle;">Chủ đề 4. Ứng dụng tin học</td>
+      <td style="padding:4px; border:1px solid #000;">Bài 8a. Làm việc với danh sách và hình ảnh</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C5</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C9</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">0.75</td>
+    </tr>
+    <tr>
+      <td style="padding:4px; border:1px solid #000;">Bài 9a. Tạo đầu trang, chân trang</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C2</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C6</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C16*</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">2</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1.5</td>
+    </tr>
+    <tr>
+      <td style="padding:4px; border:1px solid #000;">Bài 10a. Định dạng nâng cao trang chiếu</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C3</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C7</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C15*</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">2</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1.5</td>
+    </tr>
+    <tr>
+      <td style="padding:4px; border:1px solid #000;">Bài 11a. Sử dụng bản mẫu trang chiếu</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C10</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C13*</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1.25</td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="text-align:center; padding:4px; border:1px solid #000; vertical-align:middle;">2</td>
+      <td rowspan="3" style="padding:4px; border:1px solid #000; font-weight:bold; vertical-align:middle;">Chủ đề 5. Giải quyết vấn đề với máy tính</td>
+      <td style="padding:4px; border:1px solid #000;">Bài 12. Từ thuật toán đến chương trình</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C4</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C8</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C14*</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">2</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1.5</td>
+    </tr>
+    <tr>
+      <td style="padding:4px; border:1px solid #000;">Bài 13. Biểu diễn dữ liệu</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C11</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C17 (1.0đ)</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">1.25</td>
+    </tr>
+    <tr>
+      <td style="padding:4px; border:1px solid #000;">Bài 14. Cấu trúc điều khiển (Scratch)</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C12</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">C18 (2.0đ)</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;"></td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">2</td>
+      <td style="text-align:center; padding:4px; border:1px solid #000;">2.25</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="3" style="padding:6px; border:1px solid #000; text-align:right;">Tổng số câu</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">7</td>
+      <td style="padding:4px; border:1px solid #000;">7</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">18</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="3" style="padding:6px; border:1px solid #000; text-align:right;">Tổng điểm</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">3.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">2.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">1.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">1.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">3.0</td>
+      <td style="padding:4px; border:1px solid #000;">3.0</td>
+      <td style="padding:4px; border:1px solid #000;">4.0</td>
+      <td style="padding:4px; border:1px solid #000;">3.0</td>
+      <td style="padding:4px; border:1px solid #000;">10.0</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="3" style="padding:6px; border:1px solid #000; text-align:right;">Tỉ lệ %</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">30%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">20%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">10%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">10%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">30%</td>
+      <td style="padding:4px; border:1px solid #000;">30%</td>
+      <td style="padding:4px; border:1px solid #000;">40%</td>
+      <td style="padding:4px; border:1px solid #000;">30%</td>
+      <td style="padding:4px; border:1px solid #000;">100%</td>
+    </tr>
+  </tbody>
+</table>`;
+
+const SAMPLE_SPECS_HTML = `<table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman'; font-size:11pt;">
+  <thead>
+    <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+      <th rowspan="2" style="padding:8px; border:1px solid #000; width:3%;">TT</th>
+      <th rowspan="2" style="padding:8px; border:1px solid #000; width:12%;">Chủ đề</th>
+      <th rowspan="2" style="padding:8px; border:1px solid #000; width:12%;">Nội dung/Đơn vị kiến thức</th>
+      <th rowspan="2" style="padding:8px; border:1px solid #000; width:25%;">Mức độ kiểm tra, đánh giá</th>
+      <th colspan="15" style="padding:8px; border:1px solid #000;">Số câu hỏi theo mức độ nhận thức</th>
+    </tr>
+    <tr style="background-color:#f2f2f2; font-weight:bold; text-align:center;">
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Biết</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Hiểu</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">VD</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Biết</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Hiểu</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">VD</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Biết</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Hiểu</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">VD</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Biết</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Hiểu</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">VD</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Biết</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">Hiểu</th>
+      <th style="padding:4px; border:1px solid #000; width:3.3%;">VD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4" style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">1</td>
+      <td rowspan="4" style="padding:6px; border:1px solid #000; font-weight:bold; vertical-align:middle;">Chủ đề 4. Ứng dụng tin học</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 8a. Làm việc với danh sách và hình ảnh</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nhận biết được các loại danh sách liệt kê dạng ký hiệu (bullets) và số thứ tự (numbering) trong văn bản.<br/>
+        <strong>Hiểu:</strong> Giải thích được cách chèn, thay đổi kích thước và vị trí của hình ảnh để minh họa cho nội dung văn bản.<br/>
+        <strong>Vận dụng:</strong> Sử dụng kết hợp danh sách và hình ảnh để trình bày một đoạn văn bản khoa học, rõ ràng.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C1</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C5</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C9</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 9a. Tạo đầu trang, chân trang</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nêu được khái niệm và vị trí của Header (đầu trang) và Footer (chân trang) trong văn bản.<br/>
+        <strong>Hiểu:</strong> Hiểu được ý nghĩa của việc tự động đánh số trang và chèn các thông tin bổ sung (tên tác giả, ngày tháng) vào trang văn bản.<br/>
+        <strong>Vận dụng:</strong> Thực hiện tạo và định dạng đầu trang, chân trang thống nhất cho toàn bộ tài liệu.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C2</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C6</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C16*</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 10a. Định dạng nâng cao trang chiếu</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nhận biết các công cụ thay đổi màu nền (Background), phông chữ và bố cục (Layout) cho trang chiếu.<br/>
+        <strong>Hiểu:</strong> Giải thích được các quy tắc thiết kế trang chiếu chuyên nghiệp về sự phối hợp màu sắc và độ tương phản giữa chữ và nền.<br/>
+        <strong>Vận dụng:</strong> Tạo được bài trình chiếu có phong cách thiết kế nhất quán, thẩm mỹ.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C3</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C7</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C15*</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 11a. Sử dụng bản mẫu trang chiếu</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Biết cách tìm kiếm và áp dụng các mẫu thiết kế (Templates) có sẵn trong phần mềm trình chiếu.<br/>
+        <strong>Hiểu:</strong> Hiểu được lợi ích của việc sử dụng bản mẫu để đảm bảo tính chuyên nghiệp và tiết kiệm thời gian thiết kế.<br/>
+        <strong>Vận dụng:</strong> Tùy biến các thành phần trong bản mẫu để phù hợp với nội dung của một chủ đề cụ thể.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C10</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C13*</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">2</td>
+      <td rowspan="3" style="padding:6px; border:1px solid #000; font-weight:bold; vertical-align:middle;">Chủ đề 5. Giải quyết vấn đề với máy tính</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 12. Từ thuật toán đến chương trình</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nêu được khái niệm thuật toán và chương trình máy tính; hiểu chương trình là bản mô tả thuật toán cho máy tính thực hiện.<br/>
+        <strong>Hiểu:</strong> Giải thích được mối liên hệ giữa các bước trong thuật toán và các dòng lệnh tương ứng trong chương trình.<br/>
+        <strong>Vận dụng:</strong> Mô tả được thuật toán cho một bài toán đơn giản bằng ngôn ngữ tự nhiên hoặc sơ đồ khối.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C4</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C8</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C14*</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 13. Biểu diễn dữ liệu</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nhận biết các kiểu dữ liệu cơ bản trong lập trình như số (number), xâu ký tự (string), logic (boolean).<br/>
+        <strong>Hiểu:</strong> Giải thích được vai trò của biến trong việc lưu trữ và quản lý dữ liệu có thể thay đổi trong quá trình thực hiện chương trình.<br/>
+        <strong>Vận dụng:</strong> Thực hiện khai báo biến và gán giá trị cho biến trong các tình huống lập trình cụ thể.
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C11</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C17 (1.0đ)</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+    </tr>
+    <tr>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top;">Bài 14. Cấu trúc điều khiển (Scratch)</td>
+      <td style="padding:6px; border:1px solid #000; vertical-align:top; text-align:left; line-height:1.4;">
+        <strong>Biết:</strong> Nhận biết được các khối lệnh cấu trúc rẽ nhánh (if-then) và cấu trúc lặp (repeat, forever) trong Scratch.<br/>
+        <strong>Hiểu:</strong> Giải thích được kịch bản hoạt động của một đoạn mã Scratch có sử dụng các câu lệnh điều khiển.<br/>
+        <strong>Vận dụng:</strong> Viết được chương trình Scratch hoàn chỉnh sử dụng cấu trúc rẽ nhánh hoặc lặp để giải quyết một bài toán thực tế (ví dụ: tính toán, vẽ hình, hoặc trò chơi đơn giản).
+      </td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C12</td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;"></td>
+      <td style="text-align:center; padding:6px; border:1px solid #000; vertical-align:middle;">C18 (2.0đ)</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="4" style="padding:6px; border:1px solid #000; text-align:right;">Tổng số câu</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">4</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">0</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+      <td style="padding:4px; border:1px solid #000;">1</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="4" style="padding:6px; border:1px solid #000; text-align:right;">Tổng điểm</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">3.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">2.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">1.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">1.0</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">3.0</td>
+    </tr>
+    <tr style="background-color:#f9f9f9; font-weight:bold; text-align:center;">
+      <td colspan="4" style="padding:6px; border:1px solid #000; text-align:right;">Tỉ lệ %</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">30%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">20%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">10%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">10%</td>
+      <td colspan="3" style="padding:4px; border:1px solid #000;">30%</td>
+    </tr>
+  </tbody>
+</table>`;
 
 const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => (
   <motion.div
@@ -1083,6 +1558,79 @@ const App: React.FC = () => {
       setCompletedSteps(Math.max(completedSteps, 1));
     } catch (e: any) {
       setGenState((prev) => ({ ...prev, isLoading: false, error: e.message }));
+    }
+  };
+
+  const handleRestoreColumns = () => {
+    if (currentStep === AppStep.MATRIX && genState.matrix) {
+      let updated = genState.matrix;
+      // Force table styles and min-width
+      updated = updated.replace(
+        /<table([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          return `<table${before} style="border-collapse:collapse; width:100%; min-width:1200px !important; font-family:'Times New Roman', serif; font-size:11pt;"${after}>`;
+        }
+      );
+      // Ensure each cell has visible borders and proper padding
+      updated = updated.replace(
+        /<td([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          let style = "padding:4px; border:1px solid #000; text-align:center;";
+          if (styleAttr) {
+            const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
+            style = `${styles}; padding:4px; border:1px solid #000; text-align:center;`;
+          }
+          return `<td${before} style="${style}"${after}>`;
+        }
+      );
+      updated = updated.replace(
+        /<th([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          let style = "padding:4px; border:1px solid #000; text-align:center; background-color:#f2f2f2; font-weight:bold;";
+          if (styleAttr) {
+            const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
+            style = `${styles}; padding:4px; border:1px solid #000; text-align:center;`;
+          }
+          return `<th${before} style="${style}"${after}>`;
+        }
+      );
+      setGenState((prev) => ({ ...prev, matrix: updated }));
+      setSuccessMessage("Đã khôi phục định dạng cột & kích thước rộng cho Ma trận đề thi!");
+    } else if (currentStep === AppStep.SPECS && genState.specs) {
+      let updated = genState.specs;
+      // Force table styles
+      updated = updated.replace(
+        /<table([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          return `<table${before} style="border-collapse:collapse; width:100%; min-width:1200px !important; font-family:'Times New Roman', serif; font-size:11pt;"${after}>`;
+        }
+      );
+      updated = updated.replace(
+        /<td([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          let style = "padding:4px; border:1px solid #000;";
+          if (styleAttr) {
+            const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
+            style = `${styles}; padding:4px; border:1px solid #000;`;
+          }
+          return `<td${before} style="${style}"${after}>`;
+        }
+      );
+      updated = updated.replace(
+        /<th([^>]*)(style="[^"]*")?([^>]*)>/gi,
+        (match, before, styleAttr, after) => {
+          let style = "padding:4px; border:1px solid #000; background-color:#f2f2f2; font-weight:bold;";
+          if (styleAttr) {
+            const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
+            style = `${styles}; padding:4px; border:1px solid #000;`;
+          }
+          return `<th${before} style="${style}"${after}>`;
+        }
+      );
+      setGenState((prev) => ({ ...prev, specs: updated }));
+      setSuccessMessage("Đã khôi phục định dạng cột & kích thước rộng cho Bảng đặc tả!");
+    } else {
+      setSuccessMessage("Trạng thái hiện tại không hỗ trợ khôi phục cột!");
     }
   };
 
@@ -2668,30 +3216,51 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                <div className="mt-6 pt-5 border-t border-slate-100 flex justify-end gap-4">
-                  <input
-                    type="file"
-                    ref={matrixDirectUploadRef}
-                    onChange={handleMatrixUpload}
-                    accept="image/*,.pdf"
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => matrixDirectUploadRef.current?.click()}
-                    className="shadow-sm hover:shadow"
-                  >
-                    Có sẵn Ma trận?
-                  </Button>
-                  <Button
-                    onClick={handleGenerateStep1}
-                    disabled={selectedLessonIds.size === 0}
-                    isLoading={genState.isLoading}
-                    icon={<ArrowRight className="w-5 h-5" />}
-                    className="px-6 py-2.5 text-base shadow-md hover:shadow-lg"
-                  >
-                    Tạo Ma trận
-                  </Button>
+                <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadExcel(SAMPLE_MATRIX_HTML, "Ma_tran_kho_khao_thi_mau")}
+                      className="border-dashed border-blue-200 text-blue-600 bg-blue-50/20 hover:bg-blue-50/50 hover:border-blue-300 text-xs shadow-sm py-2"
+                      icon={<Download className="w-3.5 h-3.5 text-blue-500" />}
+                    >
+                      Tải Ma trận mẫu
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadExcel(SAMPLE_SPECS_HTML, "Bang_dac_ta_kho_mau")}
+                      className="border-dashed border-emerald-200 text-emerald-600 bg-emerald-50/20 hover:bg-emerald-50/50 hover:border-emerald-300 text-xs shadow-sm py-2"
+                      icon={<FileText className="w-3.5 h-3.5 text-emerald-500" />}
+                    >
+                      Tải Bảng đặc tả mẫu
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-4 ml-auto">
+                    <input
+                      type="file"
+                      ref={matrixDirectUploadRef}
+                      onChange={handleMatrixUpload}
+                      accept="image/*,.pdf"
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => matrixDirectUploadRef.current?.click()}
+                      className="shadow-sm hover:shadow"
+                    >
+                      Có sẵn Ma trận?
+                    </Button>
+                    <Button
+                      onClick={handleGenerateStep1}
+                      disabled={selectedLessonIds.size === 0}
+                      isLoading={genState.isLoading}
+                      icon={<ArrowRight className="w-5 h-5" />}
+                      className="px-6 py-2.5 text-base shadow-md hover:shadow-lg"
+                    >
+                      Tạo Ma trận
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2735,21 +3304,34 @@ const App: React.FC = () => {
                     </div>
                   )}
                   {!isEditing ? (
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        handleEdit(
-                          currentStep === AppStep.MATRIX
-                            ? genState.matrix
-                            : currentStep === AppStep.SPECS
-                              ? genState.specs
-                              : genState.exam,
-                        )
-                      }
-                      icon={<Pencil className="w-4 h-4" />}
-                    >
-                      Chỉnh sửa
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {(currentStep === AppStep.MATRIX || currentStep === AppStep.SPECS) && (
+                        <Button
+                          variant="outline"
+                          onClick={handleRestoreColumns}
+                          icon={<RefreshCw className="w-4 h-4 text-indigo-500" />}
+                          className="border-indigo-200 text-indigo-700 bg-indigo-50/30 hover:bg-indigo-50 hover:border-indigo-300 shadow-sm"
+                          title="Bảo đảm bảng hiển thị rộng rãi, không bị trình duyệt co giãn sai lệch cột"
+                        >
+                          Khôi phục cột
+                        </Button>
+                      )}
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          handleEdit(
+                            currentStep === AppStep.MATRIX
+                              ? genState.matrix
+                              : currentStep === AppStep.SPECS
+                                ? genState.specs
+                                : genState.exam,
+                          )
+                        }
+                        icon={<Pencil className="w-4 h-4" />}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       {currentStep === AppStep.EXAM && (
@@ -3038,7 +3620,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 flex justify-center">
+                    <div className="flex-1 overflow-auto p-8 flex justify-center">
                       <div
                         className={`bg-white shadow-xl ${isPreviewMobile ? "w-[375px] h-[667px] rounded-[2rem] border-[12px] border-slate-900 overflow-y-auto" : currentStep === AppStep.MATRIX || currentStep === AppStep.SPECS ? "w-[297mm] min-h-[210mm]" : "w-[210mm] min-h-[297mm]"} relative`}
                         style={
