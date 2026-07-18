@@ -13,7 +13,7 @@ import {
 } from "./types";
 import StepIndicator from "./components/StepIndicator";
 import Button from "./components/Button";
-import MarkdownView from "./components/MarkdownView";
+import MarkdownView, { preprocessScratchMarkdown } from "./components/MarkdownView";
 import HelpModal from "./components/HelpModal";
 import QuestionBankModal from "./components/QuestionBankModal";
 import {
@@ -1564,21 +1564,21 @@ const App: React.FC = () => {
   const handleRestoreColumns = () => {
     if (currentStep === AppStep.MATRIX && genState.matrix) {
       let updated = genState.matrix;
-      // Force table styles and min-width
+      // Force table styles
       updated = updated.replace(
         /<table([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          return `<table${before} style="border-collapse:collapse; width:100%; min-width:1200px !important; font-family:'Times New Roman', serif; font-size:11pt;"${after}>`;
+          return `<table${before} style="border-collapse:collapse; width:100%; table-layout:fixed; font-family:'Times New Roman', serif; font-size:11px;"${after}>`;
         }
       );
       // Ensure each cell has visible borders and proper padding
       updated = updated.replace(
         /<td([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          let style = "padding:4px; border:1px solid #000; text-align:center;";
+          let style = "padding:2px 3px; border:1px solid #000; text-align:center; font-size:11px; word-break:break-word; white-space:normal;";
           if (styleAttr) {
             const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
-            style = `${styles}; padding:4px; border:1px solid #000; text-align:center;`;
+            style = `${styles}; padding:2px 3px; border:1px solid #000; text-align:center; font-size:11px; word-break:break-word; white-space:normal;`;
           }
           return `<td${before} style="${style}"${after}>`;
         }
@@ -1586,10 +1586,10 @@ const App: React.FC = () => {
       updated = updated.replace(
         /<th([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          let style = "padding:4px; border:1px solid #000; text-align:center; background-color:#f2f2f2; font-weight:bold;";
+          let style = "padding:2px 3px; border:1px solid #000; text-align:center; background-color:#f2f2f2; font-weight:bold; font-size:11px; word-break:break-word; white-space:normal;";
           if (styleAttr) {
             const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
-            style = `${styles}; padding:4px; border:1px solid #000; text-align:center;`;
+            style = `${styles}; padding:2px 3px; border:1px solid #000; text-align:center; background-color:#f2f2f2; font-weight:bold; font-size:11px; word-break:break-word; white-space:normal;`;
           }
           return `<th${before} style="${style}"${after}>`;
         }
@@ -1602,16 +1602,16 @@ const App: React.FC = () => {
       updated = updated.replace(
         /<table([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          return `<table${before} style="border-collapse:collapse; width:100%; min-width:1200px !important; font-family:'Times New Roman', serif; font-size:11pt;"${after}>`;
+          return `<table${before} style="border-collapse:collapse; width:100%; table-layout:fixed; font-family:'Times New Roman', serif; font-size:11px;"${after}>`;
         }
       );
       updated = updated.replace(
         /<td([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          let style = "padding:4px; border:1px solid #000;";
+          let style = "padding:2px 3px; border:1px solid #000; text-align:justify; font-size:11px; word-break:break-word; white-space:normal;";
           if (styleAttr) {
             const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
-            style = `${styles}; padding:4px; border:1px solid #000;`;
+            style = `${styles}; padding:2px 3px; border:1px solid #000; text-align:justify; font-size:11px; word-break:break-word; white-space:normal;`;
           }
           return `<td${before} style="${style}"${after}>`;
         }
@@ -1619,10 +1619,10 @@ const App: React.FC = () => {
       updated = updated.replace(
         /<th([^>]*)(style="[^"]*")?([^>]*)>/gi,
         (match, before, styleAttr, after) => {
-          let style = "padding:4px; border:1px solid #000; background-color:#f2f2f2; font-weight:bold;";
+          let style = "padding:2px 3px; border:1px solid #000; background-color:#f2f2f2; font-weight:bold; font-size:11px; text-align:center; word-break:break-word; white-space:normal;";
           if (styleAttr) {
             const styles = styleAttr.replace(/style="/i, '').replace(/"$/, '');
-            style = `${styles}; padding:4px; border:1px solid #000;`;
+            style = `${styles}; padding:2px 3px; border:1px solid #000; background-color:#f2f2f2; font-weight:bold; font-size:11px; text-align:center; word-break:break-word; white-space:normal;`;
           }
           return `<th${before} style="${style}"${after}>`;
         }
@@ -1852,14 +1852,14 @@ const App: React.FC = () => {
                       font-family: 'Times New Roman', serif; 
                       font-size: 14pt; 
                       line-height: 1.0; 
-                      text-align: center;
+                      text-align: justify;
                       letter-spacing: 0pt;
                       mso-font-kerning: 0pt;
                   }
                   p {
                       margin-top: 0pt;
                       margin-bottom: 6pt;
-                      text-align: center;
+                      text-align: justify;
                       line-height: 1.0;
                   }
                   table { 
@@ -1877,14 +1877,32 @@ const App: React.FC = () => {
                       padding: 5px; 
                       vertical-align: top; 
                       mso-border-alt: 0.5pt solid black;
-                      text-align: center;
+                      text-align: justify;
+                  }
+                  thead tr, tr:first-child {
+                      text-align: center !important;
+                  }
+                  thead th, thead td, tr:first-child th, tr:first-child td {
+                      text-align: center !important;
+                      vertical-align: middle !important;
+                  }
+                  .exam-header-block,
+                  .exam-header-block p,
+                  .exam-header-block td,
+                  .exam-header-block th {
+                      text-align: center !important;
                   }
                   .header-table, .header-table td, .header-table th, .header-table p { 
                       border: none !important; 
                       mso-border-alt: none !important; 
                       text-align: left !important;
                   }
-                  h3, h4 { text-align: center; margin: 10px 0; font-weight: bold; text-transform: uppercase; }
+                  h1, h2, h3, h4, h5, h6, .exam-title { 
+                      text-align: center !important; 
+                      margin: 10px 0; 
+                      font-weight: bold !important; 
+                      text-transform: uppercase; 
+                  }
                   img { max-width: 100%; height: auto; }
               </style>
           </head>
@@ -1892,7 +1910,7 @@ const App: React.FC = () => {
               <div class="WordSection1">
       `;
     const footer = "</div></body></html>";
-    const sourceHTML = header + contentToExport + footer;
+    const sourceHTML = header + preprocessScratchMarkdown(contentToExport) + footer;
 
     return new Blob([sourceHTML], { type: "application/msword" });
   };
@@ -3269,8 +3287,8 @@ const App: React.FC = () => {
 
         {/* STEP 2, 3, 4: PREVIEW & ACTIONS */}
         {currentStep !== AppStep.INPUT && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-200px)]">
-            <div className="lg:col-span-8 h-full flex flex-col">
+          <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
+            <div className="lg:w-4/5 w-full min-w-0 h-auto flex flex-col">
               <div className="bg-white rounded-t-xl border border-slate-200 border-b-0 p-4 flex items-center justify-between">
                 <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                   {currentStep === AppStep.MATRIX
@@ -3373,7 +3391,7 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex-1 bg-slate-100 border border-slate-200 overflow-hidden relative">
+              <div className="flex-1 bg-slate-100 border border-slate-200 h-auto overflow-visible relative">
                 {genState.isLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                     <div className="text-center">
@@ -3394,7 +3412,7 @@ const App: React.FC = () => {
                 ) : null}
 
                 {isEditing ? (
-                  <div className="w-full h-full flex flex-col bg-slate-100">
+                  <div className="w-full h-auto flex flex-col bg-slate-100">
                     <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-500 shadow-sm z-10">
                       <div className="flex items-center gap-2">
                         {isPreviewMobile ? (
@@ -3620,7 +3638,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-auto p-8 flex justify-center">
+                    <div className="p-8 flex justify-center h-auto overflow-visible">
                       <div
                         className={`bg-white shadow-xl ${isPreviewMobile ? "w-[375px] h-[667px] rounded-[2rem] border-[12px] border-slate-900 overflow-y-auto" : currentStep === AppStep.MATRIX || currentStep === AppStep.SPECS ? "w-[297mm] min-h-[210mm]" : "w-[210mm] min-h-[297mm]"} relative`}
                         style={
@@ -3647,20 +3665,44 @@ const App: React.FC = () => {
                                                     outline: none;
                                                 }
                                                 .print-editor-content table { 
-                                                    border-collapse: collapse; 
+                                                    border-collapse: collapse !important; 
                                                     width: 100%; 
                                                     margin-bottom: 1rem; 
+                                                    border: 1px solid black !important;
                                                 }
                                                 .print-editor-content td, .print-editor-content th { 
-                                                    border: 1px solid black; 
+                                                    border: 1px solid black !important; 
                                                     padding: 5px; 
                                                     vertical-align: top; 
+                                                    text-align: justify;
+                                                }
+                                                .print-editor-content table thead tr,
+                                                .print-editor-content table tr:first-child {
+                                                    text-align: center !important;
+                                                }
+                                                .print-editor-content table thead th,
+                                                .print-editor-content table thead td,
+                                                .print-editor-content table tr:first-child th,
+                                                .print-editor-content table tr:first-child td {
+                                                    text-align: center !important;
+                                                    vertical-align: middle !important;
+                                                }
+                                                .print-editor-content .exam-header-block,
+                                                .print-editor-content .exam-header-block p,
+                                                .print-editor-content .exam-header-block td,
+                                                .print-editor-content .exam-header-block th {
+                                                    text-align: center !important;
                                                 }
                                                 .print-editor-content .header-table td { border: none !important; }
-                                                .print-editor-content h3, .print-editor-content h4 { text-align: center; margin: 10px 0; font-weight: bold; }
+                                                .print-editor-content h1, .print-editor-content h2, .print-editor-content h3, .print-editor-content h4 { 
+                                                    text-align: center !important; 
+                                                    margin: 10px 0; 
+                                                    font-weight: bold !important; 
+                                                    text-transform: uppercase;
+                                                }
                                                 .print-editor-content img { max-width: 100%; height: auto; }
                                                 .print-editor-content ul, .print-editor-content ol { padding-left: 20px; }
-                                                .print-editor-content p { margin-bottom: 0.5em; }
+                                                .print-editor-content p { margin-bottom: 0.5em; text-align: justify; }
 
                                                 /* SCRATCH BLOCKS CSS */
                                                 .scratch-block { display: inline-flex; align-items: center; padding: 6px 10px; margin: 2px; border-radius: 5px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.1); white-space: nowrap; vertical-align: middle; }
@@ -3693,7 +3735,7 @@ const App: React.FC = () => {
                   </div>
                 ) : (
                   <div
-                    className={`w-full h-full flex flex-col ${isPreviewMobile ? "items-center justify-center p-8 bg-slate-200/50" : ""}`}
+                    className={`w-full h-auto flex flex-col ${isPreviewMobile ? "items-center justify-center p-8 bg-slate-200/50" : ""}`}
                   >
                     {isPreviewMobile ? (
                       <div className="w-[375px] h-[667px] bg-slate-900 rounded-[3rem] p-3 border-[12px] border-slate-950 shadow-2xl relative flex flex-col focus:outline-none">
@@ -3718,6 +3760,7 @@ const App: React.FC = () => {
                               : genState.exam
                         }
                         config={visualConfig}
+                        isMatrixOrSpecs={currentStep === AppStep.MATRIX || currentStep === AppStep.SPECS}
                       />
                     )}
                   </div>
@@ -3725,373 +3768,329 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Actions (Sidebar) */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h3 className="font-bold text-slate-800 mb-4">Thao tác</h3>
-                <div className="space-y-3">
+            {/* Right Column: Actions (Sidebar 20% Width) */}
+            <div className="lg:w-1/5 lg:min-w-[260px] w-full flex-shrink-0 flex flex-col gap-4 h-auto">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-auto flex flex-col">
+                <h3 className="font-bold text-slate-800 mb-4 text-sm shrink-0">Thao tác</h3>
+                <div className="flex-1 pr-1 flex flex-col gap-[12px]">
                   {currentStep === AppStep.MATRIX && (
-                    <div className="flex flex-col gap-4">
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                          Tiếp tục quy trình
-                        </p>
-                        <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm"
-                          onClick={handleGenerateStep2}
-                          isLoading={genState.isLoading}
-                        >
-                          Tạo Bảng đặc tả{" "}
-                          <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
+                    <div className="flex flex-col gap-[12px]">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Tiếp tục quy trình
+                      </p>
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm"
+                        onClick={handleGenerateStep2}
+                        isLoading={genState.isLoading}
+                        icon={<ArrowRight className="w-4 h-4" />}
+                      >
+                        Tạo Bảng đặc tả
+                      </Button>
 
-                      <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                          Xuất dữ liệu & Upload
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 justify-start"
-                          onClick={() =>
-                            handleDownloadExcel(genState.matrix, "Ma_tran")
-                          }
-                          icon={<FileSpreadsheet className="w-4 h-4" />}
-                        >
-                          Xuất Excel Ma trận
-                        </Button>
-                        <input
-                          type="file"
-                          ref={matrixUploadRef}
-                          onChange={handleMatrixUpload}
-                          className="hidden"
-                          accept="image/*,.pdf"
-                        />
-                        <Button
-                          variant="secondary"
-                          className="w-full bg-slate-50 text-slate-600 border-slate-200"
-                          onClick={() => matrixUploadRef.current?.click()}
-                          icon={<FileText className="w-4 h-4" />}
-                        >
-                          Upload Ma trận khác
-                        </Button>
-                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Xuất dữ liệu & Upload
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          handleDownloadExcel(genState.matrix, "Ma_tran")
+                        }
+                        icon={<FileSpreadsheet className="w-4 h-4" />}
+                      >
+                        Xuất Excel Ma trận
+                      </Button>
+                      <input
+                        type="file"
+                        ref={matrixUploadRef}
+                        onChange={handleMatrixUpload}
+                        className="hidden"
+                        accept="image/*,.pdf"
+                      />
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-slate-50 text-slate-600 border-slate-200"
+                        onClick={() => matrixUploadRef.current?.click()}
+                        icon={<FileText className="w-4 h-4" />}
+                      >
+                        Upload Ma trận khác
+                      </Button>
 
-                      <div className="pt-2 border-t border-slate-100">
-                        <Button
-                          variant="secondary"
-                          className="w-full bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
-                          onClick={handleGenerateStep1}
-                          isLoading={genState.isLoading}
-                          icon={<RotateCcw className="w-4 h-4" />}
-                        >
-                          Tạo lại Ma trận (Xóa hết)
-                        </Button>
-                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Hành động khác
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                        onClick={handleGenerateStep1}
+                        isLoading={genState.isLoading}
+                        icon={<RotateCcw className="w-4 h-4" />}
+                      >
+                        Tạo lại Ma trận (Xóa hết)
+                      </Button>
                     </div>
                   )}
 
                   {currentStep === AppStep.SPECS && (
-                    <div className="flex flex-col gap-4">
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                          Tiếp tục quy trình
-                        </p>
-                        <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm"
-                          onClick={handleGenerateStep3}
-                          isLoading={genState.isLoading}
-                        >
-                          Soạn Đề thi <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
+                    <div className="flex flex-col gap-[12px]">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Tiếp tục quy trình
+                      </p>
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm"
+                        onClick={handleGenerateStep3}
+                        isLoading={genState.isLoading}
+                        icon={<ArrowRight className="w-4 h-4" />}
+                      >
+                        Soạn Đề thi
+                      </Button>
 
-                      <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                          Xuất dữ liệu
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 justify-start"
-                          onClick={() =>
-                            handleDownloadExcel(genState.specs, "Bang_dac_ta")
-                          }
-                          icon={<FileSpreadsheet className="w-4 h-4" />}
-                        >
-                          Xuất Excel Đặc tả
-                        </Button>
-                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Xuất dữ liệu
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          handleDownloadExcel(genState.specs, "Bang_dac_ta")
+                        }
+                        icon={<FileSpreadsheet className="w-4 h-4" />}
+                      >
+                        Xuất Excel Đặc tả
+                      </Button>
 
-                      <div className="pt-2 border-t border-slate-100">
-                        <Button
-                          variant="secondary"
-                          className="w-full bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
-                          onClick={handleGenerateStep2}
-                          isLoading={genState.isLoading}
-                          icon={<RotateCcw className="w-4 h-4" />}
-                        >
-                          Tạo lại Đặc tả
-                        </Button>
-                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Hành động khác
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                        onClick={handleGenerateStep2}
+                        isLoading={genState.isLoading}
+                        icon={<RotateCcw className="w-4 h-4" />}
+                      >
+                        Tạo lại Đặc tả
+                      </Button>
                     </div>
                   )}
 
                   {currentStep === AppStep.EXAM && (
-                    <div className="flex flex-col gap-5">
-                      {/* Section 1: Regeneration Notes */}
-                      <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                        <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5" /> Ghi chú điều
-                          chỉnh (AI bám sát)
-                        </label>
-                        <textarea
-                          className="w-full bg-white border border-amber-200 rounded-lg p-3 text-sm text-slate-700 focus:ring-2 focus:ring-amber-500 outline-none min-h-[100px] shadow-inner"
-                          placeholder="Ví dụ: Chuyển 2 câu trắc nghiệm thành tự luận, thêm câu hỏi về phần Scratch..."
-                          value={inputData.additionalNotes}
-                          onChange={(e) =>
-                            setInputData((prev) => ({
-                              ...prev,
-                              additionalNotes: e.target.value,
-                            }))
-                          }
-                        />
-                        <Button
-                          variant="secondary"
-                          className="w-full mt-3 bg-white border-amber-200 text-amber-700 hover:bg-amber-100 shadow-sm"
-                          onClick={handleGenerateStep3}
-                          isLoading={genState.isLoading}
-                          icon={<RotateCcw className="w-4 h-4" />}
-                        >
-                          Tạo lại Đề thi
-                        </Button>
-                      </div>
+                    <div className="flex flex-col gap-[12px]">
+                      {/* Section 1: Ghi chú điều chỉnh */}
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Ghi chú điều chỉnh (AI bám sát)
+                      </p>
+                      <textarea
+                        className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px] shadow-sm resize-none"
+                        placeholder="Ví dụ: Chuyển 2 câu trắc nghiệm thành tự luận..."
+                        value={inputData.additionalNotes}
+                        onChange={(e) =>
+                          setInputData((prev) => ({
+                            ...prev,
+                            additionalNotes: e.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                        onClick={handleGenerateStep3}
+                        isLoading={genState.isLoading}
+                        icon={<RotateCcw className="w-4 h-4" />}
+                      >
+                        Tạo lại Đề thi
+                      </Button>
 
-                      {/* Section 2: Storage Actions */}
-                      <div className="space-y-2 pb-4 border-b border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1 ml-1">
-                          <Save className="w-3 h-3" /> Lưu trữ & Chia sẻ
-                        </p>
-                        <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm py-2.5"
-                          onClick={handleSaveExam}
-                          disabled={!genState.exam}
-                          icon={<Save className="w-4 h-4" />}
-                        >
-                          Lưu vào kho cá nhân
-                        </Button>
-                        <Button
-                          className="w-full bg-slate-800 hover:bg-slate-900 shadow-md py-2.5"
-                          onClick={handleDownloadAll}
-                          isLoading={genState.isLoading}
-                          icon={<Archive className="w-4 h-4" />}
-                        >
-                          Tải toàn bộ (Zip)
-                        </Button>
-                      </div>
+                      {/* Section 2: Lưu trữ & Chia sẻ */}
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Lưu trữ & Chia sẻ
+                      </p>
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm"
+                        onClick={handleSaveExam}
+                        disabled={!genState.exam}
+                        icon={<Save className="w-4 h-4" />}
+                      >
+                        Lưu vào kho cá nhân
+                      </Button>
+                      <Button
+                        className="w-full bg-slate-800 hover:bg-slate-900 shadow-sm"
+                        onClick={handleDownloadAll}
+                        isLoading={genState.isLoading}
+                        icon={<Archive className="w-4 h-4" />}
+                      >
+                        Tải toàn bộ (Zip)
+                      </Button>
 
-                      {/* Section 3: Word Export */}
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                          Xuất Word (.docx)
-                        </p>
-                        <div className="grid grid-cols-1 gap-2">
-                          <Button
-                            variant="outline"
-                            className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 justify-start h-auto py-3 px-4"
-                            onClick={() =>
-                              handleExportWord(
-                                genState.exam || editValue,
-                                "De_Thi_Full",
-                                "full",
-                              )
-                            }
-                            icon={
-                              <FileText className="w-5 h-5 flex-shrink-0" />
-                            }
-                          >
-                            <div className="text-left">
-                              <div className="font-bold text-sm">
-                                Đề thi đầy đủ
-                              </div>
-                              <div className="text-[10px] opacity-70">
-                                Bao gồm cả Đề và Đáp án
-                              </div>
-                            </div>
-                          </Button>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
-                              onClick={() =>
-                                handleExportWord(
-                                  genState.exam || editValue,
-                                  "De_Thi_Only",
-                                  "exam",
-                                )
-                              }
-                              icon={
-                                <FileSignature className="w-3 h-3 flex-shrink-0" />
-                              }
-                            >
-                              Chỉ Đề thi
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[120px] text-blue-600 border-blue-200 hover:bg-blue-50 py-2.5 px-2 text-xs"
-                              onClick={() =>
-                                handleExportWord(
-                                  genState.exam || editValue,
-                                  "Dap_An_Only",
-                                  "key",
-                                )
-                              }
-                              icon={<Split className="w-3 h-3 flex-shrink-0" />}
-                            >
-                              Chỉ Đáp án
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                      {/* Section 3: Xuất Word */}
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        Xuất Word (.docx)
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          handleExportWord(
+                            genState.exam || editValue,
+                            "De_Thi_Full",
+                            "full",
+                          )
+                        }
+                        icon={<FileText className="w-4 h-4 flex-shrink-0" />}
+                      >
+                        Đề thi đầy đủ (Đề & Đáp án)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          handleExportWord(
+                            genState.exam || editValue,
+                            "De_Thi_Only",
+                            "exam",
+                          )
+                        }
+                        icon={<FileSignature className="w-4 h-4 flex-shrink-0" />}
+                      >
+                        Chỉ Đề thi
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          handleExportWord(
+                            genState.exam || editValue,
+                            "Dap_An_Only",
+                            "key",
+                          )
+                        }
+                        icon={<Split className="w-4 h-4 flex-shrink-0" />}
+                      >
+                        Chỉ Đáp án
+                      </Button>
 
-                      {/* Section 4: Print & Data */}
-                      <div className="pt-2 border-t border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                          In ấn & Dữ liệu khác
-                        </p>
-                        <div className="space-y-2">
-                          <Button
-                            variant="secondary"
-                            className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 border-0"
-                            onClick={() => window.print()}
-                            icon={<Download className="w-4 h-4" />}
-                          >
-                            In trực tiếp / Lưu PDF
-                          </Button>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[110px] text-[10px] text-slate-600 border-slate-200 hover:bg-slate-50 px-2"
-                              onClick={() =>
-                                handleDownloadExcel(genState.matrix, "Ma_tran")
-                              }
-                              icon={
-                                <FileSpreadsheet className="w-3 h-3 flex-shrink-0" />
-                              }
-                            >
-                              File Ma trận
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="flex-1 min-w-[110px] text-[10px] text-slate-600 border-slate-200 hover:bg-slate-50 px-2"
-                              onClick={() =>
-                                handleDownloadExcel(
-                                  genState.specs,
-                                  "Bang_dac_ta",
-                                )
-                              }
-                              icon={
-                                <FileSpreadsheet className="w-3 h-3 flex-shrink-0" />
-                              }
-                            >
-                              File Đặc tả
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                      {/* Section 4: In ấn & Dữ liệu khác */}
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100">
+                        In ấn & Dữ liệu khác
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 border-0"
+                        onClick={() => window.print()}
+                        icon={<Download className="w-4 h-4" />}
+                      >
+                        In trực tiếp / Lưu PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-slate-600 border-slate-200 hover:bg-slate-50"
+                        onClick={() =>
+                          handleDownloadExcel(genState.matrix, "Ma_tran")
+                        }
+                        icon={<FileSpreadsheet className="w-4 h-4" />}
+                      >
+                        File Ma trận
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-slate-600 border-slate-200 hover:bg-slate-50"
+                        onClick={() =>
+                          handleDownloadExcel(genState.specs, "Bang_dac_ta")
+                        }
+                        icon={<FileSpreadsheet className="w-4 h-4" />}
+                      >
+                        File Đặc tả
+                      </Button>
 
-                      {/* Section 5: Visual Config */}
+                      {/* Section 5: Tùy chỉnh hiển thị */}
                       <div className="pt-2 border-t border-slate-100">
                         <details className="group">
-                          <summary className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center justify-between cursor-pointer hover:text-blue-600 transition-colors list-none">
+                          <summary className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between cursor-pointer hover:text-blue-600 transition-colors list-none select-none">
                             <span className="flex items-center gap-1">
                               <Pencil className="w-3 h-3" /> Tùy chỉnh hiển thị
                             </span>
                             <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
                           </summary>
-                          <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100 mt-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 mb-1">
-                                  Font chữ
-                                </label>
-                                <select
-                                  className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
-                                  value={visualConfig.fontFamily}
-                                  onChange={(e) =>
-                                    setVisualConfig((v) => ({
-                                      ...v,
-                                      fontFamily: e.target.value,
-                                    }))
-                                  }
-                                >
-                                  <option value="'Times New Roman', serif">
-                                    Times New Roman
-                                  </option>
-                                  <option value="'Arial', sans-serif">
-                                    Arial
-                                  </option>
-                                  <option value="'Inter', sans-serif">
-                                    Inter
-                                  </option>
-                                  <option value="'JetBrains Mono', monospace">
-                                    Kỹ thuật (Mono)
-                                  </option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 mb-1">
-                                  Cỡ chữ
-                                </label>
-                                <input
-                                  type="text"
-                                  className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
-                                  value={visualConfig.fontSize}
-                                  onChange={(e) =>
-                                    setVisualConfig((v) => ({
-                                      ...v,
-                                      fontSize: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
+                          <div className="flex flex-col gap-2 mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                            <div>
+                              <label className="block text-[10px] text-slate-500 mb-1">
+                                Font chữ
+                              </label>
+                              <select
+                                className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
+                                value={visualConfig.fontFamily}
+                                onChange={(e) =>
+                                  setVisualConfig((v) => ({
+                                    ...v,
+                                    fontFamily: e.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="'Times New Roman', serif">
+                                  Times New Roman
+                                </option>
+                                <option value="'Arial', sans-serif">
+                                  Arial
+                                </option>
+                                <option value="'Inter', sans-serif">
+                                  Inter
+                                </option>
+                                <option value="'JetBrains Mono', monospace">
+                                  Kỹ thuật (Mono)
+                                </option>
+                              </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 mb-1">
-                                  Giãn dòng
-                                </label>
-                                <input
-                                  type="text"
-                                  className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
-                                  value={visualConfig.lineHeight}
-                                  onChange={(e) =>
-                                    setVisualConfig((v) => ({
-                                      ...v,
-                                      lineHeight: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 mb-1">
-                                  Lề trái (cm)
-                                </label>
-                                <input
-                                  type="number"
-                                  step="0.1"
-                                  className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
-                                  value={visualConfig.margins.left}
-                                  onChange={(e) =>
-                                    setVisualConfig((v) => ({
-                                      ...v,
-                                      margins: {
-                                        ...v.margins,
-                                        left: parseFloat(e.target.value) || 0,
-                                      },
-                                    }))
-                                  }
-                                />
-                              </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-500 mb-1">
+                                Cỡ chữ
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
+                                value={visualConfig.fontSize}
+                                onChange={(e) =>
+                                  setVisualConfig((v) => ({
+                                    ...v,
+                                    fontSize: e.target.value,
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-500 mb-1">
+                                Giãn dòng
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
+                                value={visualConfig.lineHeight}
+                                onChange={(e) =>
+                                  setVisualConfig((v) => ({
+                                    ...v,
+                                    lineHeight: e.target.value,
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-500 mb-1">
+                                Lề trái (cm)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                className="w-full text-[11px] p-2 border border-slate-200 rounded-md bg-white outline-none focus:ring-1 focus:ring-blue-500"
+                                value={visualConfig.margins.left}
+                                onChange={(e) =>
+                                  setVisualConfig((v) => ({
+                                    ...v,
+                                    margins: {
+                                      ...v.margins,
+                                      left: parseFloat(e.target.value) || 0,
+                                    },
+                                  }))
+                                }
+                              />
                             </div>
                           </div>
                         </details>
@@ -4102,10 +4101,9 @@ const App: React.FC = () => {
                         <div className="pt-2 border-t border-slate-100">
                           <div className="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
                             <p className="text-[10px] font-bold text-red-800 uppercase tracking-widest mb-2 flex items-center gap-1">
-                              <AlertCircle className="w-3.5 h-3.5" /> Quét lỗi
-                              tự động ({errorReport.length})
+                              <AlertCircle className="w-3.5 h-3.5" /> Quét lỗi ({errorReport.length})
                             </p>
-                            <div className="space-y-3 max-h-[150px] overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1">
                               {errorReport.map((err) => (
                                 <div
                                   key={err.id}
@@ -4127,21 +4125,21 @@ const App: React.FC = () => {
                       )}
                     </div>
                   )}
-
-                  <div className="pt-4 border-t border-slate-100">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleBack}
-                      disabled={genState.isLoading}
-                    >
-                      Quay lại
-                    </Button>
-                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-100 shrink-0 mt-4">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleBack}
+                    disabled={genState.isLoading}
+                  >
+                    Quay lại
+                  </Button>
                 </div>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
+              {/* Mẹo Box */}
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800 shrink-0">
                 <p className="font-bold mb-1 flex items-center gap-2">
                   <Clock className="w-4 h-4" /> Mẹo
                 </p>

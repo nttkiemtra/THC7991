@@ -412,7 +412,7 @@ export const generateStep1Matrix = async (
      Phải tính toán và hiển thị chính xác các số liệu sau ở cuối bảng (trong thẻ tfoot hoặc row cuối):
      - **Tỉ lệ % điểm:** Biết ...% - Hiểu ...% - Vận dụng 30%. Tổng cộng tất cả là 100%.
      - **Tổng điểm:** Trắc nghiệm 7.0 - Tự luận 3.0.
-  5. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman', serif; font-size:11pt;">.
+  5. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; table-layout:fixed; font-family:'Times New Roman', serif; font-size:11px;">.
   `;
 
   try {
@@ -523,7 +523,7 @@ export const generateStep2Specs = async (
      - Điền CHÍNH XÁC mã câu hỏi (C1, C2...) lấy từ Ma trận sang.
   5. **FOOTER (TỔNG KẾT):**
      Hiển thị tổng số câu và phân phối điểm số (Trắc nghiệm 7.0 - Tự luận 3.0).
-  6. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; min-width:1200px; font-family:'Times New Roman', serif; font-size:11pt;">.
+  6. KHÔNG trả về markdown fences. Bắt buộc dùng thẻ <table border="1" style="border-collapse:collapse; width:100%; table-layout:fixed; font-family:'Times New Roman', serif; font-size:11px;">.
   `;
 
   try {
@@ -571,51 +571,7 @@ export const generateStep3Exam = async (
       --sc-sensing: #5CB1D6; --sc-sensing-brd: #2E8EB8;
       --sc-operators: #59C059; --sc-operators-brd: #389438;
       --sc-variables: #FF8C1A; --sc-variables-brd: #DB6E00;
-      --sc-myblocks: #FF6680; --sc-myblocks-brd: #D94D63;
-    }
-    
-    .scratch-font { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; color: white; white-space: nowrap; cursor: default; }
-
-    /* Theme Classes */
-    .sc-motion { --bg: var(--sc-motion); --brd: var(--sc-motion-brd); }
-    .sc-looks { --bg: var(--sc-looks); --brd: var(--sc-looks-brd); }
-    .sc-sound { --bg: var(--sc-sound); --brd: var(--sc-sound-brd); }
-    .sc-events { --bg: var(--sc-events); --brd: var(--sc-events-brd); }
-    .sc-control { --bg: var(--sc-control); --brd: var(--sc-control-brd); }
-    .sc-sensing { --bg: var(--sc-sensing); --brd: var(--sc-sensing-brd); }
-    .sc-operators { --bg: var(--sc-operators); --brd: var(--sc-operators-brd); }
-    .sc-variables { --bg: var(--sc-variables); --brd: var(--sc-variables-brd); }
-    .sc-myblocks { --bg: var(--sc-myblocks); --brd: var(--sc-myblocks-brd); }
-
-    /* Simple Block */
-    .scratch-block {
-      display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; margin: 2px;
-      border-radius: 4px; border: 1px solid rgba(0,0,0,0.15);
-      background-color: var(--bg); border-color: var(--brd);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      color: white; font-weight: bold; font-family: sans-serif; font-size: 12px;
-    }
-
-    /* C-Block Structure */
-    .scratch-c-block { display: flex; flex-direction: column; align-items: flex-start; margin: 2px 0; color: white; font-family: sans-serif; font-size: 12px; font-weight: bold; }
-    
-    .scratch-c-header {
-      background-color: var(--bg); border: 1px solid var(--brd); border-bottom: none;
-      padding: 6px 10px; border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
-      display: inline-flex; align-items: center; gap: 4px;
-      min-height: 28px; box-sizing: border-box;
-    }
-    
-    .scratch-c-body {
-      border-left: 16px solid var(--bg); /* The spine */
-      padding-left: 8px; /* Indent for inner blocks */
-      min-height: 24px; display: flex; flex-direction: column; align-items: flex-start;
-      border-left-color: var(--bg);
-      background-color: transparent;
-      box-sizing: border-box;
-    }
-
-    .scratch-c-else {
+      --sc-myblocks: #FF6680; --sc-myblocks-br    .scratch-c-else {
       background-color: var(--bg); border: 1px solid var(--brd);
       padding: 6px 10px; margin-top: -1px; width: auto; min-width: 80px;
       border-top-right-radius: 4px; border-bottom-right-radius: 4px;
@@ -673,28 +629,35 @@ export const generateStep3Exam = async (
 
   // Enhanced Scratch Instruction with strict formatting for E-Blocks and Repeat Until
   const scratchInstruction = isIT 
-    ? `**YÊU CẦU VỀ SCRATCH VÀ TRÌNH BÀY (QUAN TRỌNG - BẮT BUỘC TUÂN THỦ):**
+    ? `**YÊU CẦU VỀ KHỐI LỆNH SCRATCH VÀ TRÌNH BÀY TRỰC QUAN (BẮT BUỘC TUÂN THỦ TUYỆT ĐỐI):**
        1. **CHỦ ĐỀ:** Nếu câu hỏi thuộc chủ đề "Giải quyết vấn đề với sự trợ giúp của máy tính", **BẮT BUỘC CHỈ ĐƯỢC PHÉP** sử dụng ngôn ngữ lập trình **SCRATCH**. Tuyệt đối **KHÔNG** dùng Python, Pascal, hay C++.
        
-       2. **TRÌNH BÀY DẠNG ẢNH CHỤP MÀN HÌNH (SCREENSHOT):**
-          - **BẮT BUỘC** bọc toàn bộ các khối lệnh Scratch trong một thẻ <div class="scratch-canvas">.
-          - Thẻ này sẽ giả lập một khung hình chụp màn hình (screenshot) giúp câu hỏi trực quan hơn.
+       2. **CẤM HOÀN TOÀN SINH MÃ GIẢ VĂN BẢN THÔ:**
+          - **CẤM TUYỆT ĐỐI** sinh mã Scratch dưới dạng văn bản thuần túy hoặc sử dụng các ký hiệu lồng nhau bằng dấu ngoặc như \`{ \}\` hay \`( )\` (ví dụ: cấm sinh dạng "nói [Lớn hơn] trong [2] giây" hoặc "nếu { điểm > 50 } thì...").
+          - Hệ thống phải ngừng ngay việc mô tả các dòng lệnh bằng văn bản thô hoặc giả lập sơ sài.
 
-       3. **HÌNH ẢNH CÂU LỆNH (Sử dụng HTML/CSS chuẩn):**
-          - Tuyệt đối KHÔNG mô tả lệnh bằng lời (VD: "Khối di chuyển 10 bước").
-          - **BẮT BUỘC** phải tạo hình ảnh khối lệnh bằng các thẻ HTML với Class CSS mới đã định nghĩa.
-          - Sử dụng **BIẾN CSS** thông qua các class chủ đề (sc-motion, sc-control, sc-events, sc-looks, sc-sensing, sc-operators, sc-variables, sc-custom) để đảm bảo màu sắc chuẩn xác.
+       3. **BẮT BUỘC CHUYỂN SANG CẤU TRÚC HÌNH KHỐI TRỰC QUAN BẰNG HTML/CSS:**
+          - Khi gặp câu hỏi liên quan đến Scratch, bạn **BẮT BUỘC** tự động sinh ra một đoạn mã HTML/CSS được thiết kế riêng (sử dụng các lớp CSS đã định nghĩa sẵn dưới đây) để mô phỏng chính xác cấu trúc hình khối trực quan: "khối chữ C", "khối bo góc", "khối lục giác", và đổ màu nền (background-color) đúng chuẩn của từng nhóm lệnh:
+            + **Khối Điều khiển (Control - lặp lại, nếu...thì):** Sử dụng màu vàng cam (#ffab19, class \`sc-control\`), có cấu trúc chữ C bọc lấy các câu lệnh bên trong.
+            + **Khối Chuyển động (Motion - di chuyển, xoay):** Sử dụng màu xanh dương (#4c97ff, class \`sc-motion\`).
+            + **Khối Hiển thị (Looks - nói, nghĩ):** Sử dụng màu tím (#9966ff, class \`sc-looks\`).
+            + **Khối Biến số (Variables - đặt... thành, thay đổi...):** Sử dụng màu cam đậm (#ff8c1a, class \`sc-variables\`), các góc bo tròn nhẹ, chữ trắng in đậm rõ nét.
+            + **Khối Cảm biến (Sensing):** Sử dụng màu xanh lam nhạt (#5cb1d6, class \`sc-sensing\`).
+            + **Khối Toán tử (Operators):** Sử dụng màu xanh lục (#59c059, class \`sc-operators\`).
+          - Tăng độ dày nét: Các khối lệnh cần nét chữ in đậm và viền đậm rõ nét (\`font-weight: bold\`) để thầy cô dễ dàng nhìn rõ hoặc chụp ảnh màn hình.
 
-       3. **CẤU TRÚC BLOCK NÂNG CAO (MẪU CHUẨN BẰNG TIẾNG VIỆT - STRICT RULE):**
+       4. **BỐ CỤC THỤT LỀ CHUẨN (NESTED INDENTATION & PADDING):**
+          - Đảm bảo các khối lệnh lồng nhau (như bên trong khối lặp \`scratch-c-body\`) phải được thụt lề (padding-left/margin-left) chính xác, giúp giáo viên và học sinh nhìn rõ cấu trúc thuật toán phân cấp ngay trong chế độ xem trước trên web mà không cần phải đoán.
+          - Toàn bộ khối lệnh phải được bọc bên trong một container \`<div class="scratch-canvas">\` để giả lập một ảnh chụp màn hình Scratch chuyên nghiệp.
+
+       5. **CẤU TRÚC HTML MẪU CHUẨN (BẮT BUỘC SINH THEO MẪU NÀY):**
           
           **A. Khối đơn giản (Simple Block):**
           <span class="scratch-block sc-motion">di chuyển <span class="scratch-input">10</span> bước</span>
-          <span class="scratch-block sc-events">khi bấm vào cờ xanh</span>
           <span class="scratch-block sc-looks">nói <span class="scratch-input">Xin chào!</span> trong <span class="scratch-input">2</span> giây</span>
-          <span class="scratch-block sc-variables">đặt <span class="scratch-dropdown">my variable</span> thành <span class="scratch-input">0</span></span>
-
-          **B. Vòng lặp (C-Block):**
-          <!-- Lặp lại số lần -->
+          <span class="scratch-block sc-variables">đặt <span class="scratch-dropdown">điểm</span> thành <span class="scratch-input">0</span></span>
+          
+          **B. Vòng lặp (C-Block - Khối chữ C):**
           <div class="scratch-c-block sc-control">
             <div class="scratch-c-header">lặp lại <span class="scratch-input">10</span></div>
             <div class="scratch-c-body">
@@ -703,26 +666,7 @@ export const generateStep3Exam = async (
             <div class="scratch-c-footer"></div>
           </div>
           
-          <!-- Lặp lại cho đến khi (Lặp có điều kiện) -->
-          <div class="scratch-c-block sc-control">
-            <div class="scratch-c-header">lặp lại cho đến khi <span class="scratch-hex sc-sensing">đang chạm <span class="scratch-dropdown">cạnh</span> ?</span></div>
-            <div class="scratch-c-body">
-               <span class="scratch-block sc-motion">di chuyển <span class="scratch-input">10</span> bước</span>
-            </div>
-            <div class="scratch-c-footer"></div>
-          </div>
-
-          **C. Điều kiện Nếu ... thì / Nếu không thì (E-Block):**
-          <!-- Nếu ... thì -->
-          <div class="scratch-c-block sc-control">
-            <div class="scratch-c-header">nếu <span class="scratch-hex sc-operators"><span class="scratch-variable">điểm</span> > <span class="scratch-input">50</span></span> thì</div>
-            <div class="scratch-c-body">
-               <span class="scratch-block sc-looks">nói <span class="scratch-input">Bạn đã thắng!</span></span>
-            </div>
-            <div class="scratch-c-footer"></div>
-          </div>
-
-          <!-- Nếu ... thì ... nếu không thì -->
+          **C. Điều kiện lồng nhau (Nếu... thì... nếu không thì):**
           <div class="scratch-c-block sc-control">
             <div class="scratch-c-header">nếu <span class="scratch-hex sc-sensing">phím <span class="scratch-dropdown">trắng</span> được bấm?</span> thì</div>
             <div class="scratch-c-body">
@@ -734,24 +678,15 @@ export const generateStep3Exam = async (
             </div>
             <div class="scratch-c-footer"></div>
           </div>
-          
-          **D. Khối lệnh tùy chỉnh (Custom Block / My Blocks):**
-          <span class="scratch-block sc-custom">Định nghĩa <span class="scratch-input">Nhảy</span> <span class="scratch-input">độ cao</span></span>
-          <div class="scratch-c-block sc-control">
-            <div class="scratch-c-header">lặp lại <span class="scratch-input">10</span></div>
-            <div class="scratch-c-body">
-               <span class="scratch-block sc-motion">thay đổi y một lượng <span class="scratch-variable">độ cao</span></span>
-            </div>
-            <div class="scratch-c-footer"></div>
-          </div>
 
-          **E. INPUT SHAPES:**
-          - Số/Chữ (Trắng): <span class="scratch-input">10</span>
+          **D. Các hình dáng Input:**
+          - Số/Chữ (Trắng bo tròn): <span class="scratch-input">10</span>
           - Dropdown (Có mũi tên): <span class="scratch-dropdown">vị trí ngẫu nhiên</span>
-          - Điều kiện (Lục giác): <span class="scratch-hex sc-sensing">đang chạm <span class="scratch-dropdown">con trỏ chuột</span> ?</span>
-          - Biến/Toán tử (Tròn): <span class="scratch-variable">my variable</span> hoặc <span class="scratch-variable sc-operators"><span class="scratch-input">1</span> + <span class="scratch-input">1</span></span>
+          - Điều kiện (Lục giác): <span class="scratch-hex sc-sensing">đang chạm <span class="scratch-dropdown">cạnh</span> ?</span>
+          - Biến số (Tròn): <span class="scratch-variable">điểm</span>
 
-       4. **BẮT BUỘC:** Chèn đoạn CSS sau vào thẻ <style> trong <head> của file HTML trả về:
+       6. **BẮT BUỘC: Chèn toàn bộ các quy tắc CSS mẫu của Scratch vào thẻ <style> trong đề thi để hiển thị trực quan.**
+          CSS quy định:
           ${scratchCssDef}
       ` 
     : "";
@@ -771,7 +706,16 @@ export const generateStep3Exam = async (
   const essayScoreText = allEssayScores.length > 0 ? `Chi tiết điểm từng câu tự luận: ${allEssayScores.map(s => s + 'đ').join(', ')}.` : '';
 
   const validationInstructions = `
-  **KIỂM TRA TÍNH NHẤT QUÁN (BẮT BUỘC TRƯỚC KHI TRẢ VỀ KẾT QUẢ):**
+  **QUY TẮC AN TOÀN & KHỚP TỶ LỆ 100% (BẮT BUỘC TUÂN THỦ TUYỆT ĐỐI):**
+  1. **KHỚP TỶ LỆ 100%:** Đề thi được tạo ra bắt buộc phải khớp hoàn chỉnh cả về số lượng câu hỏi lẫn mức độ nhận thức (Nhận biết - NB, Thông hiểu - TH, Vận dụng - VD, Vận dụng cao - VDC) được quy định cụ thể tại mỗi ô của Ma trận và Bảng đặc tả.
+  2. **CẤM TỰ Ý ĐỔI MỨC ĐỘ:** Tuyệt đối không được tự ý thay đổi nội dung câu hỏi hoặc nâng/hạ mức độ nhận thức của câu hỏi so với ma trận và bảng đặc tả gốc. Trên ma trận/bảng đặc tả ghi mức độ nào (ví dụ: Thông hiểu) thì câu hỏi tương ứng trong đề phải đúng chuẩn mức độ đó, không được lấy câu hỏi Vận dụng rồi gắn mác Thông hiểu.
+  3. **CƠ CHẾ KIỂM LỖI & BÁO CÁO (NẾU THẤT BẠI):**
+     Nếu bất kỳ câu hỏi nào được yêu cầu trong Ma trận hoặc Bảng đặc tả mà bạn KHÔNG thể đáp ứng đúng mức độ nhận thức tương ứng (do kho dữ liệu câu hỏi, tài liệu đính kèm, hoặc ghi chú không có đủ thông tin hoặc mâu thuẫn), bạn **PHẢI DỪNG QUÁ TRÌNH SINH ĐỀ** ngay lập tức và chỉ trả về duy nhất một thông báo lỗi chi tiết theo định dạng sau:
+     "Lỗi: Không thể sinh câu hỏi [Số thứ tự câu] mức độ [[Mức độ nhận thức]] cho [[Tên bài/chủ đề]]. Vui lòng điều chỉnh lại Ma trận hoặc Bảng đặc tả."
+     Ví dụ: "Lỗi: Không thể sinh câu hỏi 12 mức độ [Thông hiểu] cho [Bài 15]. Vui lòng điều chỉnh lại Ma trận hoặc Bảng đặc tả."
+     *Lưu ý:* Khi trả về thông báo lỗi, không trả về bất kỳ nội dung HTML hay văn bản nào khác.
+
+  **KIỂM TRA SỐ LƯỢNG VÀ ĐIỂM SỐ (BẮT BUỘC):**
   - Bạn PHẢI đếm chính xác số lượng câu hỏi được tạo ra cho từng phần và đối chiếu với Bảng đặc tả.
   ${counts.type1 > 0 ? `- PHẦN I phải có ĐÚNG ${counts.type1} câu. Tổng điểm: ${counts.type1 * 0.25} điểm.` : ''}
   ${counts.type2 > 0 ? `- PHẦN II phải có ĐÚNG ${counts.type2} câu. Tổng điểm: ${counts.type2 * 1.0} điểm.` : ''}
@@ -779,7 +723,6 @@ export const generateStep3Exam = async (
   ${counts.type4 > 0 ? `- PHẦN IV phải có ĐÚNG ${counts.type4} câu. Tổng điểm: ${counts.type4 * 1.0} điểm.` : ''}
   ${counts.essay > 0 ? `- PHẦN V (Tự luận) phải có ĐÚNG ${counts.essay} câu. Tổng điểm: 3.0 điểm. ${essayScoreText}` : ''}
   - TỔNG ĐIỂM TOÀN BÀI PHẢI CHÍNH XÁC LÀ 10.0 ĐIỂM.
-  - KHÔNG ĐƯỢC TỰ Ý THÊM HOẶC BỚT CÂU HỎI SO VỚI BẢNG ĐẶC TẢ. NẾU THẤY LỆCH, HÃY TỰ ĐỘNG SỬA LẠI CHO KHỚP.
   `;
 
   let preSelectedQuestionsText = "";
@@ -810,15 +753,17 @@ export const generateStep3Exam = async (
 
   **YÊU CẦU HÌNH THỨC & NỘI DUNG:**
 
-  **1. HEADER ĐỀ THI:**
-  - Kẻ bảng không viền (class="header-table" width="100%"):
-    + Cột Trái (40%): TRƯỜNG THCS ........................<br>Lớp: ........................<br>Họ và tên: ........................
-    + Cột Phải (60%): **BÀI KIỂM TRA ........................**<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
-  - **KHUNG ĐIỂM & NHẬN XÉT (BẮT BUỘC):**
-    Ngay dưới Header, kẻ bảng (border="1" width="100%"):
-    + Cột 1 (30% width, cao 80px): **Điểm**
-    + Cột 2 (70% width, cao 80px): **Lời nhận xét của thầy (cô) giáo:** (Để trống)
-  - Tiêu đề giữa: **ĐỀ BÀI**
+  **1. HEADER ĐỀ THI VÀ KHỐI TIÊU ĐỀ (BẮT BUỘC):**
+  - **BẮT BUỘC:** Bọc toàn bộ phần thông tin từ đầu trang cho đến chữ 'ĐỀ BÀI' vào một container có thuộc tính text-align: center (sử dụng thẻ <div class="exam-header-block" style="text-align: center;">...</div>).
+  - Bên trong khối tiêu đề này, kẻ các bảng và hiển thị tiêu đề như sau:
+    + Kẻ bảng không viền (class="header-table" width="100%"):
+      * Cột Trái (40%): TRƯỜNG THCS ........................<br>Lớp: ........................<br>Họ và tên: ........................
+      * Cột Phải (60%): **BÀI KIỂM TRA ........................**<br>MÔN: ${data.subject.toUpperCase()}<br>Thời gian làm bài: ${data.duration} Phút
+    + **KHUNG ĐIỂM & NHẬN XÉT (BẮT BUỘC):**
+      Ngay dưới Header, kẻ bảng (border="1" width="100%"):
+      * Cột 1 (30% width, cao 80px): **Điểm**
+      * Cột 2 (70% width, cao 80px): **Lời nhận xét của thầy (cô) giáo:** (Để trống)
+    + Tiêu đề giữa: Chữ "ĐỀ BÀI" viết hoa, in đậm, căn giữa tuyệt đối (Sử dụng "<h2 style=\"text-align: center; font-weight: bold; margin: 15px 0;\"><b>ĐỀ BÀI</b></h2>").
 
   **2. PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN:**
   - **BẮT BUỘC:** Ngay dưới tiêu đề Phần I, tạo **KHUNG TRẢ LỜI CHO HỌC SINH**:
@@ -868,13 +813,15 @@ export const generateStep3Exam = async (
   1. Chỉ xuất ra Full HTML Document (<!DOCTYPE html>...). 
   2. Font Times New Roman, size 14pt, line-height 1.0.
   3. KHÔNG trả về markdown.
-  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ):
-     - body, p { text-align: center; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; }
-     - .header-table td, .header-table p { border: none !important; padding: 2px; text-align: left; vertical-align: top; }
-     - h2, h3, h4, .exam-title { text-align: center; font-weight: bold; margin: 10px 0; }
-     - table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid black; margin-left: auto; margin-right: auto; }
-     - td, th { border: 1px solid black; padding: 5px; vertical-align: top; text-align: center; }
-     - .question-content { text-align: center; }
+  4. CSS quan trọng (BẮT BUỘC TUÂN THỦ KHÔNG THAY ĐỔI):
+     - body, p { text-align: justify; margin-top: 0pt; margin-bottom: 0pt; line-height: 1.0; }
+     - .exam-header-block, .exam-header-block p, .exam-header-block td, .exam-header-block th { text-align: center !important; }
+     - .header-table td, .header-table p { border: none !important; padding: 2px; text-align: left !important; vertical-align: top; }
+     - h1, h2, h3, h4, .exam-title { text-align: center !important; font-weight: bold !important; margin: 15px 0; text-transform: uppercase; }
+     - table { width: 100%; border-collapse: collapse !important; margin-bottom: 15px; border: 1px solid black !important; margin-left: auto; margin-right: auto; }
+     - td, th { border: 1px solid black !important; padding: 5px; vertical-align: top; text-align: justify; }
+     - thead tr, tr:first-child { text-align: center !important; }
+     - thead th, thead td, tr:first-child th, tr:first-child td { text-align: center !important; vertical-align: middle !important; }
   `;
 
   try {
@@ -913,8 +860,15 @@ export const generateStep3Exam = async (
       },
     });
     const text = response.text || "Lỗi tạo đề thi.";
-    return text.replace(/```html/g, '').replace(/```/g, '');
-  } catch (error) {
-    throw new Error("Lỗi API Gemini.");
+    const cleanedText = text.replace(/```html/g, '').replace(/```/g, '').trim();
+    if (cleanedText.includes("Lỗi: Không thể sinh câu hỏi") || cleanedText.startsWith("Lỗi:")) {
+      throw new Error(cleanedText);
+    }
+    return cleanedText;
+  } catch (error: any) {
+    if (error.message && (error.message.startsWith("Lỗi:") || error.message.includes("Lỗi: "))) {
+      throw error;
+    }
+    throw new Error("Lỗi API Gemini. Chi tiết: " + (error.message || error));
   }
 };
